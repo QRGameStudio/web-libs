@@ -1,0 +1,80 @@
+<!-- Save game modal -->
+<div id="modal-saveGame" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Do you want to save <span r-var="v.gameName"></span> to you collection?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Unsupported QR scanning warning -->
+<div id="modal-QRScanUnsuppWarn" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Unsupported device</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Unfortunately, scanning from a web browser can be quite buggy. For better performance,
+                    please use external scanner
+                    (e. g. <a href="https://f-droid.org/en/packages/de.t_dankworth.secscanqr/" target="_blank">
+                        SecScanQR
+                    </a> for Android) or download the qrpr app.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.history.back()">Go back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Online friends list selection -->
+<div id="modal-OnlineFriends" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Friends list</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <a class="list-group-item list-group-item-action"
+                   r-for="friend of Object.keys(v.friends)"
+                   r-click="f.select(l.friend)"
+                   style="display: flex; justify-content: space-between;"
+                >
+                    <span r-var="l.friend"></span>
+                    <div style="display: inline">
+                        <button r-if="v.options.allowDelete"
+                                r-click="f.delete(l.friend)"
+                                class="btn btn-primary">
+                            Delete
+                        </button>
+                    </div>
+                </a>
+            </div>
+            <div class="modal-footer" r-if="v.options.allowAdd">
+                <button class="btn btn-primary" r-click="f.addFriend()">Add friend</button>
+            </div>
+        </div>
+    </div>
+</div>

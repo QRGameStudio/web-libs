@@ -1,0 +1,11 @@
+body.theme-light {
+  --theme: 'light';
+  --theme-primary: #FFF;
+  --theme-contrast: #000;
+}
+
+body.theme-dark {
+  --theme: 'dark';
+  --theme-primary: #212121;
+  --theme-contrast: #fff;
+}
