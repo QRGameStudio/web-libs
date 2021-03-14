@@ -1,0 +1,5 @@
+build/*
+compile/*.js
+compile/*.css
+compile/*.txt
+compile/*.html

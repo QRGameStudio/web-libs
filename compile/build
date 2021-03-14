@@ -1,0 +1,23 @@
+[ -d "../build" ] && rm -r ../build
+mkdir ../build
+
+for dir in $(ls -d ../G*); 
+do
+ 	cp $dir/* .;
+done;
+
+for file in $(ls -d *.js);
+do
+	echo $file >> jsInput.txt;
+done;
+
+./builder.sh -c jsInput.txt ../build/libs.min.js
+
+for file in $(ls -d *.css);
+do
+	cat $file >> ../build/libs.css;
+done;
+
+cp *.html ../build/
+
+./clear
