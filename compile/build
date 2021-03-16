@@ -28,7 +28,7 @@ wget ftp://176.102.64.23/public/libs/libsInfo.json
 
 awk -F'["]' -v OFS='"'  '/"version":/{
     split($4,a,".");
-    $4=a[1]"."a[2]"."a[3]+1
+    $4=a[1]"."a[2]+1
     }
 ;1' libsInfo.json > ../build/libsInfo.json
 
