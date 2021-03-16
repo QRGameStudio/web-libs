@@ -1,3 +1,4 @@
+build
 build/*
 compile/*.js
 compile/*.css
