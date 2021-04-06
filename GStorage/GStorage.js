@@ -1,7 +1,7 @@
 /**
  * Operator with the storage
- * @param context in which context to operate - should be unique for every app
- * @param temporary if set to true, then the values are valid only for current session
+ * @param context {string} in which context to operate - should be unique for every app
+ * @param temporary {boolean} if set to true, then the values are valid only for current session
  * @constructor
  */
 function GStorage(context, temporary=false) {
@@ -25,7 +25,7 @@ function GStorage(context, temporary=false) {
      * Sets the new value for the key and saves to the storage
      * @param {string} key key to set value for
      * @param {any} value value to set
-     * @return {Promise<bool>} true on success
+     * @return {Promise<boolean>} true on success
      */
     this.set = (key, value) => new Promise((r) => {
         storageProvider.setItem(`${context}/${key}`, JSON.stringify(value));
