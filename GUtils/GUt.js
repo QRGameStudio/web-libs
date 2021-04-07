@@ -23,7 +23,7 @@ const GUt = {
      * @return {number}
      */
     radToDeg: (radians) => {
-      return radians * (180/Math.PI);
+      return radians * (180 / Math.PI);
     },
     /**
      * Converts degrees into radians
@@ -31,7 +31,7 @@ const GUt = {
      * @return {number}
      */
     degToRad: (degrees) => {
-        return degrees / (Math.PI / 180);
+        return degrees * (Math.PI / 180);
     },
     /**
      * Counts an angle in which a point [dx, dy] is seen from point [0, 0]

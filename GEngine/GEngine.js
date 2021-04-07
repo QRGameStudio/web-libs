@@ -93,7 +93,7 @@ class GEG {
     __step() {
         this.onStep();
         this.objects.forEach((o) => {
-            o.step();
+            o.__game_step();
         });
     }
 
@@ -158,12 +158,42 @@ class GEO {
     }
 
     /**
+     * Direction of this object in degrees
+     * @return {number} [0; 360)
+     */
+    get d() {
+        const {sx, sy} = this;
+        return GUt.countAngle(sx, -sy);
+    }
+
+    /**
+     * Sets the direction of this object
+     * @param degrees {number}
+     */
+    set d(degrees) {
+        const { s } = this;
+        const directionRad = GUt.degToRad(degrees);
+        this.sx = s * Math.cos(directionRad);
+        this.sy = s * -Math.sin(directionRad);
+    }
+
+    /**
      * Speed of this object
      * @return {number}
      */
     get s() {
         const { sx, sy } = this;
         return Math.sqrt((sx ** 2) + (sy ** 2));
+    }
+
+    /**
+     * Sets speed of this object
+     * @param speed {number}
+     */
+    set s(speed) {
+        const directionRad = GUt.degToRad(this.d);
+        this.sx = speed * Math.cos(directionRad);
+        this.sy = speed * -Math.sin(directionRad);
     }
 
     step() {
@@ -187,5 +217,11 @@ class GEO {
         const ww = w / 2;
 
         ctx.strokeRect(this.x - ww, this.y - wh, w, h);
+    }
+
+    __game_step() {
+        this.x += this.sx;
+        this.y += this.sy;
+        this.step();
     }
 }
