@@ -139,10 +139,26 @@ class GEG {
 
     /**
      * Create new object
+     * @param x {number} default 0
+     * @param y {number} default 0
+     * @param direction {number} default 0
+     * @param relativeTo {GEO} default null, if set, all other arguments are taken as relative to this
      * @return {GEO}
      */
-    createObject() {
-        return new GEO(this);
+    createObject(x = 0, y = 0, direction = 0, relativeTo = null) {
+        const obj = new GEO(this);
+        if (relativeTo === null) {
+            obj.x = x;
+            obj.y = y;
+            obj.d = direction;
+        } else {
+            const relativePoint = GUt.pointRelativeTo(relativeTo.x, relativeTo.y, relativeTo.d, x, y);
+            obj.x = relativePoint.x;
+            obj.y = relativePoint.y;
+            obj.d = relativeTo.d + direction;
+        }
+
+        return obj;
     }
 
     /**
@@ -401,7 +417,16 @@ class GEO {
     }
 
     /**
+     * Remove this object from game
+     * @return {void}
+     */
+    die() {
+        this.game.objects = this.game.objects.filter((o) => o !== this);
+    }
+
+    /**
      * Perform one step event
+     * @return {void}
      */
     step() {
         // To be implemented for every object
@@ -410,6 +435,7 @@ class GEO {
     /**
      * Draws this object on the game canvas
      * @param ctx {CanvasRenderingContext2D}
+     * @return {void}
      */
     draw(ctx) {
         const { w, h, wh, hh } = this;
@@ -427,6 +453,7 @@ class GEO {
 
     /**
      * Triggered when object fully leaves the screen
+     * @return {void}
      */
     onscreenleft() {
         // To be implemented on instance
@@ -434,6 +461,7 @@ class GEO {
 
     /**
      * Triggered when object touches screen border
+     * @return {void}
      */
     onscreenborder() {
         // To be implemented on instance
@@ -442,6 +470,7 @@ class GEO {
     /**
      * Perform move by the speed and launch step event of this object
      * @private
+     * @return {void}
      */
     __game_step() {
         this.x += this.sx;
@@ -481,6 +510,7 @@ class GEO {
      * Draw this object on the game canvas
      * Auto-apply rotation if image angle or direction is set
      * @private
+     * @return {void}
      */
     __draw() {
         const { ctx } = this.game;
