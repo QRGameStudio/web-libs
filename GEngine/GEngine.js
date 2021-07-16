@@ -1,3 +1,6 @@
+/**
+ * Game engine
+ */
 class GEG {
     /**
      *
@@ -40,7 +43,7 @@ class GEG {
          * @param y {number}
          */
         this.onClick = (x, y) => {
-            console.debug(`Clicked at ${x} ${y}`)
+            console.debug(`[GEG] Clicked at ${x} ${y}`)
         }
 
         /**
@@ -48,7 +51,7 @@ class GEG {
          * @param keyEvent {KeyboardEvent}
          */
         this.onKeyDown = (key, keyEvent) => {
-            console.debug(`Key down ${key}`, keyEvent);
+            console.debug(`[GEG] Key down ${key}`, keyEvent);
         }
 
         /**
@@ -56,7 +59,7 @@ class GEG {
          * @param keyEvent {KeyboardEvent}
          */
         this.onKeyUp = (key, keyEvent) => {
-            console.debug(`Key up ${key}`, keyEvent);
+            console.debug(`[GEG] Key up ${key}`, keyEvent);
         }
 
         this.__rescale_canvas();
@@ -106,6 +109,9 @@ class GEG {
         return this.canvas.height;
     }
 
+    /**
+     * Star the game loop
+     */
     run() {
         const _this = this;
 
@@ -123,12 +129,16 @@ class GEG {
         gameLoopOnce();
     }
 
+    /**
+     * Run one step of the game
+     */
     runOneLoop() {
         this.__step();
         this.__draw();
     }
 
     /**
+     * Create new object
      * @return {GEO}
      */
     createObject() {
@@ -136,6 +146,7 @@ class GEG {
     }
 
     /**
+     * How many milliseconds one step takes
      * @returns {number}
      */
     get stepTime() {
@@ -149,6 +160,10 @@ class GEG {
         return this.canvas.getContext('2d');
     }
 
+    /**
+     * Perform one step on the game and all objects
+     * @private
+     */
     __step() {
         this.onStep();
         this.objects.forEach((o) => {
@@ -156,6 +171,10 @@ class GEG {
         });
     }
 
+    /**
+     * Performs draw event on self and all objects
+     * @private
+     */
     __draw() {
         const {ctx, canvas} = this;
 
@@ -168,14 +187,22 @@ class GEG {
         });
     }
 
+    /**
+     * Rescale canvas to new game size
+     * @private
+     */
     __rescale_canvas() {
         const { canvas } = this;
         const { height, width } = canvas.getBoundingClientRect();
+        console.debug(`[GEG] Scaling canvas to ${width}x${height}`);
         canvas.height = height;
         canvas.width = width;
     }
 }
 
+/**
+ * Game object
+ */
 class GEO {
     /**
      *
@@ -238,6 +265,17 @@ class GEO {
          */
         this.game = game;
         this.game.objects.push(this);
+
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this.__onscreenleftTriggered = false;
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this.__onscreenborderTriggered = false;
     }
 
     /**
@@ -254,6 +292,14 @@ class GEO {
      */
     get hh() {
         return this.h / 2;
+    }
+
+    /**
+     * Radius
+     * @return {number} max of this.wh, this.hh
+     */
+    get r() {
+        return Math.max(this.wh, this.hh);
     }
 
     /**
@@ -336,11 +382,15 @@ class GEO {
         this.__sy = speed * -Math.sin(directionRad);
     }
 
+    /**
+     * Perform one step event
+     */
     step() {
-
+        // To be implemented for every object
     }
 
     /**
+     * Draws this object on the game canvas
      * @param ctx {CanvasRenderingContext2D}
      */
     draw(ctx) {
@@ -357,12 +407,63 @@ class GEO {
         ctx.strokeRect(this.x - wh, this.y - hh, w, h);
     }
 
+    /**
+     * Triggered when object fully leaves the screen
+     */
+    onscreenleft() {
+        // To be implemented on instance
+    }
+
+    /**
+     * Triggered when object touches screen border
+     */
+    onscreenborder() {
+        // To be implemented on instance
+    }
+
+    /**
+     * Perform move by the speed and launch step event of this object
+     * @private
+     */
     __game_step() {
         this.x += this.sx;
         this.y -= this.sy;
+
+        const radius = this.r;
+
+        // test if object has left the screen
+        if (this.x + radius < 0 ||
+            this.x - radius > this.game.w ||
+            this.y + radius < 0 ||
+            this.y - radius > this.game.h) {
+            if (!this.__onscreenleftTriggered) {
+                this.__onscreenleftTriggered = true;
+                this.onscreenleft();
+            }
+        } else if (this.__onscreenleftTriggered) {
+            this.__onscreenleftTriggered = false;
+        } else if (
+            this.x - radius < 0 ||
+            this.y - radius < 0 ||
+            this.x + radius > this.game.w ||
+            this.y + radius > this.game.h
+        ) {
+            if (!this.__onscreenborderTriggered) {
+                this.onscreenborder();
+                this.__onscreenborderTriggered = true;
+            }
+        } else if (this.__onscreenborderTriggered) {
+            this.__onscreenborderTriggered = false;
+        }
+
         this.step();
     }
 
+    /**
+     * Draw this object on the game canvas
+     * Auto-apply rotation if image angle or direction is set
+     * @private
+     */
     __draw() {
         const { ctx } = this.game;
         const angle = this.ia !== null ? this.ia : this.d;
