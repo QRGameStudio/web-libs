@@ -141,8 +141,8 @@ class GEG {
      */
     runOneLoop() {
         this.__step();
-        this.__checkCollisions();
         this.__draw();
+        this.__checkCollisions();
     }
 
     /**
