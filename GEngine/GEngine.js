@@ -99,6 +99,26 @@ class GEG {
     }
 
     /**
+     * Emulate key press
+     * @param key {string} pressed key
+     * @return {void}
+     */
+    press(key) {
+        this.__keys_down[key] = true;
+        this.onKeyDown(key, null);
+    }
+
+    /**
+     * Emulate key release
+     * @param key {string} released key
+     * @return {void}
+     */
+    release(key) {
+        delete this.__keys_down[key];
+        this.onKeyDown(key, null);
+    }
+
+    /**
      * Width
      * @return {number}
      */
