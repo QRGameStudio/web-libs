@@ -161,12 +161,13 @@ class GEG {
     }
 
     /**
-     * Perform one step on the game and all objects
+     * Perform one step on the gawame and all objects
      * @private
      */
     __step() {
         this.onStep();
         this.objects.forEach((o) => {
+            // noinspection JSUnresolvedFunction
             o.__game_step();
         });
     }
@@ -183,6 +184,7 @@ class GEG {
 
         this.onDraw(ctx, canvas);
         this.objects.forEach((o) => {
+            // noinspection JSUnresolvedFunction
             o.__draw();
         });
     }
@@ -241,6 +243,7 @@ class GEO {
          * @private
          */
         this.__sy = 0;
+        // noinspection JSUnusedGlobalSymbols
         /**
          * Type of this object
          * @type {string}
@@ -340,6 +343,7 @@ class GEO {
         return this.__sx;
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * @param speed {number}
      */
@@ -358,6 +362,7 @@ class GEO {
         return this.__sy;
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * @param speed {number}
      */
@@ -380,6 +385,19 @@ class GEO {
         const directionRad = GUt.degToRad(this.d);
         this.__sx = speed * Math.cos(directionRad);
         this.__sy = speed * -Math.sin(directionRad);
+    }
+
+    /**
+     * Tests if the speed is in forward (true) or backward (false) direction
+     * @return {boolean} true if the speed is stopped or is in forward or false if backward direction
+     */
+    get fwd() {
+        const { sx, sy } = this;
+        if (sx === 0 && sy === 0) {
+            return true;
+        }
+        const directionSum = Math.abs(this.d + GUt.countAngle(sx, sy));
+        return (directionSum > 359 && directionSum < 361) || (directionSum < 1 && directionSum > -1);
     }
 
     /**
