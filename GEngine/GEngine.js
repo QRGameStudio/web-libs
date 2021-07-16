@@ -23,6 +23,11 @@ class GEG {
         this.fps = 30;
 
         /**
+         * @type {boolean}
+         */
+        this.paused = false;
+
+        /**
          * @type {Object.<string, boolean>}
          * @private
          */
@@ -118,7 +123,9 @@ class GEG {
         function gameLoopOnce() {
             const timeStart = Date.now();
 
-            _this.runOneLoop();
+            if (!_this.paused) {
+                _this.runOneLoop();
+            }
 
             setTimeout(
                 () => window.requestAnimationFrame(() => gameLoopOnce()),
