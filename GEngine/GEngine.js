@@ -62,10 +62,10 @@ class GEG {
             console.debug(`[GEG] Key up ${key}`, keyEvent);
         }
 
-        this.__rescale_canvas();
+        this.__rescaleCanvas();
         // hook events
         this.canvas.setAttribute('tabindex', `${Math.floor(Math.random() * 10000)}`);
-        this.canvas.addEventListener('resize', () => this.__rescale_canvas());
+        this.canvas.addEventListener('resize', () => this.__rescaleCanvas());
         this.canvas.addEventListener('click', (event) => {
             const {x, y} = event;
             this.onClick(x, y);
@@ -134,6 +134,7 @@ class GEG {
      */
     runOneLoop() {
         this.__step();
+        this.__checkCollisions();
         this.__draw();
     }
 
@@ -184,7 +185,7 @@ class GEG {
         this.onStep();
         this.objects.forEach((o) => {
             // noinspection JSUnresolvedFunction
-            o.__game_step();
+            o.__gameStep();
         });
     }
 
@@ -205,11 +206,36 @@ class GEG {
         });
     }
 
+    __checkCollisions() {
+        this.objects.forEach((o1, i1) => {
+            if (o1.cwl.size === 0) {
+                return;
+            }
+            for (let i2 = i1 + 1; i2 < this.objects.length; i2++) {
+                const o2 = this.objects[i2];
+                const o1Accepts = o1.cwl.has(o2.t);
+                const o2Accepts = o2.cwl.has(o1.t);
+                if (!o1Accepts && !o2Accepts) {
+                    continue;
+                }
+                const collides = o1.isCol(o2);
+                if (collides) {
+                    if (o1Accepts) {
+                        o1.oncollision(o2);
+                    }
+                    if (o2Accepts) {
+                        o2.oncollision(o1);
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Rescale canvas to new game size
      * @private
      */
-    __rescale_canvas() {
+    __rescaleCanvas() {
         const { canvas } = this;
         const { height, width } = canvas.getBoundingClientRect();
         console.debug(`[GEG] Scaling canvas to ${width}x${height}`);
@@ -277,6 +303,12 @@ class GEO {
          * @private
          */
         this.__direction = 0;
+
+        /**
+         * Set of types that are allowed to collide with this object
+         * @type {Set<string>}
+         */
+        this.cwl = new Set();
 
         /**
          * Game that this object is assigned to
@@ -425,6 +457,42 @@ class GEO {
     }
 
     /**
+     * Tests if is colliding with other object
+     * Performs pixel-perfect collision if two objects are close enough
+     * @param other {GEO}
+     * @param forcePixelPerfectCollision {boolean}
+     * @return {boolean}
+     */
+    isCol(other, forcePixelPerfectCollision = false) {
+        const radius = this.r;
+        const radiusOther = other.r;
+
+        if (radiusOther < radius) {
+            // always test the one with smaller number with pixels
+            return other.isCol(this, forcePixelPerfectCollision);
+        }
+
+        // quick test if object are able to have collision
+        const distance = Math.sqrt(((this.x - other.x) ** 2) + ((this.y - other.y) ** 2));
+        if (!forcePixelPerfectCollision && distance > radius + radiusOther) {
+            return false;
+        }
+
+        // pixel-perfect collision detection
+        const gameCopyCanvas = document.createElement('canvas');
+        const ctx = gameCopyCanvas.getContext('2d');
+        gameCopyCanvas.width = this.game.w;
+        gameCopyCanvas.height = this.game.h;
+        const radius2x = radius * 2;
+        this.__draw(ctx);
+        const sumOrig = ctx.getImageData(this.x - radius, this.y - radius, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
+        ctx.globalCompositeOperation = "destination-out";
+        other.__draw(ctx);
+        const sumNew = ctx.getImageData(this.x - radius, this.y - radius, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
+        return sumOrig !== sumNew;
+    }
+
+    /**
      * Perform one step event
      * @return {void}
      */
@@ -468,11 +536,19 @@ class GEO {
     }
 
     /**
+     * Triggered when this object collides with another whitelisted object
+     * @param other {GEO}
+     */
+    oncollision(other) {
+        // To be implemented on instance
+    }
+
+    /**
      * Perform move by the speed and launch step event of this object
      * @private
      * @return {void}
      */
-    __game_step() {
+    __gameStep() {
         this.x += this.sx;
         this.y -= this.sy;
 
@@ -509,22 +585,32 @@ class GEO {
     /**
      * Draw this object on the game canvas
      * Auto-apply rotation if image angle or direction is set
+     * @param altCtx {CanvasRenderingContext2D} alternative ctx to draw on
      * @private
      * @return {void}
      */
-    __draw() {
-        const { ctx } = this.game;
-        const angle = this.ia !== null ? this.ia : this.d;
+    __draw(altCtx = null) {
+        const ctx = altCtx === null ? this.game.ctx : altCtx;
+        const angle = this.__draw_angle;
         if (angle !== 0) {
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(GUt.degToRad(angle));
             ctx.translate(-this.x, -this.y);
         }
-        this.draw(this.game.ctx);
+        this.draw(ctx);
         if (angle !== 0) {
             ctx.restore();
         }
+    }
+
+    /**
+     * Computes at which angle should this object be drawn
+     * @return {number}
+     * @private
+     */
+    get __draw_angle() {
+        return this.ia !== null ? this.ia : this.d;
     }
 
     /**

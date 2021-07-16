@@ -1,11 +1,13 @@
 // noinspection JSUnusedGlobalSymbols
 /**
  *  Collections of utils for games
- * @type {{degToRad: (function(degrees: number): number),
+ * @type {{
+ * degToRad: (function(degrees: number): number),
  * countAngle: ((function(deltaX: number, deltaY: number): number)),
  * radToDeg: (function(radians: number): number),
  * ud: (function(base64string: string): string),
- * pointRelativeTo: (function(centerX: number, centerY: number, rotationDeg: number, deltaX: number, deltaY: number): {x: number, y: number})
+ * pointRelativeTo: (function(centerX: number, centerY: number, rotationDeg: number, deltaX: number, deltaY: number): {x: number, y: number}),
+ * cropCanvas: (function(source: HTMLCanvasElement, x: number, y: number, width: number, height: number): HTMLCanvasElement)
  * }}
  */
 const GUt = {
@@ -80,5 +82,22 @@ const GUt = {
         const x = centerX + distance * Math.cos(GUt.degToRad(absoluteRotation));
         const y = centerY + distance * Math.sin(GUt.degToRad(absoluteRotation));
         return {x, y};
+    },
+    /**
+     * Crops canvas and returns it as new cropped canvas
+     * @param source {HTMLCanvasElement}
+     * @param x {number}
+     * @param y {number}
+     * @param width {number}
+     * @param height {number}
+     * @param target {HTMLCanvasElement} if specified, this canvas is overwritten
+     * @return {HTMLCanvasElement}
+     */
+    cropCanvas: (source, x, y,width,height, target) => {
+        target = target !== null ? target : document.createElement('canvas');
+        target.width = width;
+        target.height = height;
+        target.getContext('2d').drawImage(source, x, y, width, height, 0, 0, width, height);
+        return target;
     }
 }
