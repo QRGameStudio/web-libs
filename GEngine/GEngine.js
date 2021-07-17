@@ -67,6 +67,13 @@ class GEG {
             console.debug(`[GEG] Key up ${key}`, keyEvent);
         }
 
+        /**
+         * Object removed at the end of the step
+         * @type {Set<GEO>}
+         * @private
+         */
+        this.__dead_objects = new Set();
+
         this.__rescaleCanvas();
         // hook events
         this.canvas.setAttribute('tabindex', `${Math.floor(Math.random() * 10000)}`);
@@ -89,6 +96,7 @@ class GEG {
         });
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Tests if key is currently pressed
      * @param key {string} name of the key
@@ -98,6 +106,7 @@ class GEG {
         return key in this.__keys_down;
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Emulate key press
      * @param key {string} pressed key
@@ -108,6 +117,7 @@ class GEG {
         this.onKeyDown(key, null);
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Emulate key release
      * @param key {string} released key
@@ -134,6 +144,7 @@ class GEG {
         return this.canvas.height;
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Star the game loop
      */
@@ -163,8 +174,10 @@ class GEG {
         this.__step();
         this.__draw();
         this.__checkCollisions();
+        this.__removeDeadObjects();
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Create new object
      * @param x {number} default 0
@@ -190,6 +203,15 @@ class GEG {
     }
 
     /**
+     * Schedules object for removing at the end of the game step
+     * @param object {GEO}
+     * @return {void}
+     */
+    removeObject(object) {
+        this.__dead_objects.add(object);
+    }
+
+    /**
      * How many milliseconds one step takes
      * @returns {number}
      */
@@ -205,8 +227,9 @@ class GEG {
     }
 
     /**
-     * Perform one step on the gawame and all objects
+     * Perform one step on the game and all objects
      * @private
+     * @return {void}
      */
     __step() {
         this.onStep();
@@ -219,6 +242,7 @@ class GEG {
     /**
      * Performs draw event on self and all objects
      * @private
+     * @return {void}
      */
     __draw() {
         const {ctx, canvas} = this;
@@ -233,6 +257,11 @@ class GEG {
         });
     }
 
+    /**
+     * Checks all objects if onCollision should be called
+     * @private
+     * @return {void}
+     */
     __checkCollisions() {
         this.objects.forEach((o1, i1) => {
             if (o1.cwl.size === 0) {
@@ -259,8 +288,19 @@ class GEG {
     }
 
     /**
+     * Removes dead objects from the game
+     * @private
+     * @return {void}
+     */
+    __removeDeadObjects() {
+        this.objects = this.objects.filter((o) => !this.__dead_objects.has(o));
+        this.__dead_objects.clear();
+    }
+
+    /**
      * Rescale canvas to new game size
      * @private
+     * @return {void}
      */
     __rescaleCanvas() {
         const { canvas } = this;
@@ -448,6 +488,7 @@ class GEO {
         }
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Sets speed of this object
      * @param speed {number}
@@ -462,6 +503,7 @@ class GEO {
         this.__sy = speed * -Math.sin(directionRad);
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Tests if the speed is in forward (true) or backward (false) direction
      * @return {boolean} true if the speed is stopped or is in forward or false if backward direction
@@ -475,12 +517,13 @@ class GEO {
         return (directionSum > 359 && directionSum < 361) || (directionSum < 1 && directionSum > -1);
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Remove this object from game
      * @return {void}
      */
     die() {
-        this.game.objects = this.game.objects.filter((o) => o !== this);
+        this.game.removeObject(this);
     }
 
     /**
