@@ -72,7 +72,14 @@ class GEG {
          * @type {Set<GEO>}
          * @private
          */
-        this.__dead_objects = new Set();
+        this.__deadObjects = new Set();
+
+        /**
+         * Force game resolution instead of taking full size
+         * @type {null | {width: number, height: number}}
+         * @private
+         */
+        this.__forcedResolution = null;
 
         this.__rescaleCanvas();
         // hook events
@@ -146,6 +153,16 @@ class GEG {
 
     // noinspection JSUnusedGlobalSymbols
     /**
+     * Force-sets new resolution, null for auto resolution
+     * @param resolution {null | {w: number, h: number}}
+     */
+    set res(resolution) {
+        this.__forcedResolution = resolution ? {width: resolution.w, height: resolution.h} : null;
+        this.__rescaleCanvas();
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    /**
      * Star the game loop
      */
     run() {
@@ -208,7 +225,7 @@ class GEG {
      * @return {void}
      */
     removeObject(object) {
-        this.__dead_objects.add(object);
+        this.__deadObjects.add(object);
     }
 
     /**
@@ -293,8 +310,8 @@ class GEG {
      * @return {void}
      */
     __removeDeadObjects() {
-        this.objects = this.objects.filter((o) => !this.__dead_objects.has(o));
-        this.__dead_objects.clear();
+        this.objects = this.objects.filter((o) => !this.__deadObjects.has(o));
+        this.__deadObjects.clear();
     }
 
     /**
@@ -306,8 +323,15 @@ class GEG {
         const { canvas } = this;
         const { height, width } = canvas.getBoundingClientRect();
         console.debug(`[GEG] Scaling canvas to ${width}x${height}`);
-        canvas.height = height;
-        canvas.width = width;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        if (!this.__forcedResolution) {
+            canvas.height = height;
+            canvas.width = width;
+        } else {
+            canvas.height = this.__forcedResolution.height;
+            canvas.width = this.__forcedResolution.width;
+        }
     }
 }
 
