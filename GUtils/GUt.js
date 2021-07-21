@@ -1,14 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 /**
  *  Collections of utils for games
- * @type {{
- * degToRad: (function(degrees: number): number),
- * countAngle: ((function(deltaX: number, deltaY: number): number)),
- * radToDeg: (function(radians: number): number),
- * ud: (function(base64string: string): string),
- * pointRelativeTo: (function(centerX: number, centerY: number, rotationDeg: number, deltaX: number, deltaY: number): {x: number, y: number}),
- * cropCanvas: (function(source: HTMLCanvasElement, x: number, y: number, width: number, height: number): HTMLCanvasElement)
- * }}
+ * @type {{isLandscape: (function(): boolean), cropCanvas: (function(HTMLCanvasElement, number, number, number, number, HTMLCanvasElement): HTMLCanvasElement), degToRad: (function(number)), countAngle: ((function(number, number): number)|*), pointRelativeTo: (function(number, number, number, number, number): {x: number, y: number}), radToDeg: (function(number)), ud: (function(string): string)}}
  */
 const GUt = {
     /**
@@ -99,5 +92,14 @@ const GUt = {
         target.height = height;
         target.getContext('2d').drawImage(source, x, y, width, height, 0, 0, width, height);
         return target;
+    },
+    /**
+     * Test if the device is in landscape or portrait mode
+     * @return boolean
+     */
+    isLandscape: () => {
+        const { width, height } = document.body.getBoundingClientRect();
+        console.debug('[GUt] Screen size', width, height);
+        return width > height;
     }
 }
