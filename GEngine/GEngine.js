@@ -39,7 +39,7 @@ class GEG {
 
         /**
          * @type {GPoint}
-         * @private
+         * @protected
          */
         this.__cameraOffset = {x: 0, y: 0};
 
@@ -355,9 +355,6 @@ class GEG {
                 }
             }
         });
-
-        ctx.strokeStyle = 'red';
-        ctx.strokeRect(-this.__cameraOffset.x, -this.__cameraOffset.y, canvas.width, canvas.height);
     }
 
     /**
@@ -755,12 +752,14 @@ class GEO {
         this.y -= this.sy;
 
         const radius = this.r;
+        const game = this.game;
+        const offset = this.game.__cameraOffset;
 
         // test if object has left the screen
-        if (this.x + radius < 0 ||
-            this.x - radius > this.game.w ||
-            this.y + radius < 0 ||
-            this.y - radius > this.game.h) {
+        if (this.x + radius < -offset.x ||
+            this.x - radius > game.w - offset.x ||
+            this.y + radius < -offset.y ||
+            this.y - radius > game.h - offset.y) {
             if (!this.__onscreenleftTriggered) {
                 this.__onscreenleftTriggered = true;
                 this.onscreenleft();
@@ -768,10 +767,10 @@ class GEO {
         } else if (this.__onscreenleftTriggered) {
             this.__onscreenleftTriggered = false;
         } else if (
-            this.x - radius < 0 ||
-            this.y - radius < 0 ||
-            this.x + radius > this.game.w ||
-            this.y + radius > this.game.h
+            this.x - radius < -offset.x ||
+            this.y - radius < -offset.y ||
+            this.x + radius > game.w - offset.x ||
+            this.y + radius > game.h - offset.y
         ) {
             if (!this.__onscreenborderTriggered) {
                 this.onscreenborder();
