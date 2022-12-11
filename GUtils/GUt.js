@@ -1,42 +1,44 @@
 // noinspection JSUnusedGlobalSymbols
 /**
  *  Collections of utils for games
- * @type {{isLandscape: (function(): boolean), cropCanvas: (function(HTMLCanvasElement, number, number, number, number, HTMLCanvasElement): HTMLCanvasElement), degToRad: (function(number)), countAngle: ((function(number, number): number)|*), pointRelativeTo: (function(number, number, number, number, number): {x: number, y: number}), radToDeg: (function(number)), ud: (function(string): string)}}
  */
-const GUt = {
+class GUt {
     /**
      * Unicode decode
      * @param {string} base64string base64 encoded unicode string
      * @returns {string} original string
      */
-    ud: (base64string) => {
+    static ud (base64string) {
         return decodeURIComponent(atob(base64string).split('').map(function(c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
-    },
+    }
+
     /**
      * Converts radians into degrees
      * @param radians {number}
      * @return {number}
      */
-    radToDeg: (radians) => {
+    static radToDeg (radians) {
       return radians * (180 / Math.PI);
-    },
+    }
+
     /**
      * Converts degrees into radians
      * @param degrees {number}
      * @return {number}
      */
-    degToRad: (degrees) => {
+    static degToRad (degrees) {
         return degrees * (Math.PI / 180);
-    },
+    }
+
     /**
      * Counts an angle in which a point [dx, dy] is seen from point [0, 0]
      * @param dx {number}
      * @param dy {number}
      * @return {number}
      */
-    countAngle: (dx, dy) => {
+    static countAngle(dx, dy) {
         if (dx === 0  && dy === 0) {
             return 0;
         }
@@ -59,7 +61,8 @@ const GUt = {
         }
         const base = GUt.radToDeg(Math.atan(Math.abs(dx) / Math.abs(dy)));
         return base + 270;
-    },
+    }
+
     /**
      * Computes point position relative to the center with given rotation
      * @param centerX {number} x position of the center
@@ -69,13 +72,14 @@ const GUt = {
      * @param deltaY {number} y distance
      * @return {{x: number, y: number}} absolute point coordinates
      */
-    pointRelativeTo: (centerX, centerY, rotationDeg, deltaX, deltaY) => {
+    static pointRelativeTo(centerX, centerY, rotationDeg, deltaX, deltaY) {
         const absoluteRotation = rotationDeg + GUt.countAngle(deltaX, deltaY);
         const distance = Math.sqrt((deltaX ** 2) + (deltaY ** 2 ));
         const x = centerX + distance * Math.cos(GUt.degToRad(absoluteRotation));
         const y = centerY + distance * Math.sin(GUt.degToRad(absoluteRotation));
         return {x, y};
-    },
+    }
+
     /**
      * Crops canvas and returns it as new cropped canvas
      * @param source {HTMLCanvasElement}
@@ -86,18 +90,19 @@ const GUt = {
      * @param target {HTMLCanvasElement} if specified, this canvas is overwritten
      * @return {HTMLCanvasElement}
      */
-    cropCanvas: (source, x, y,width,height, target) => {
+    static cropCanvas(source, x, y,width,height, target) {
         target = target !== null ? target : document.createElement('canvas');
         target.width = width;
         target.height = height;
         target.getContext('2d').drawImage(source, x, y, width, height, 0, 0, width, height);
         return target;
-    },
+    }
+
     /**
      * Test if the device is in landscape or portrait mode
      * @return boolean
      */
-    isLandscape: () => {
+    static isLandscape () {
         const { width, height } = document.body.getBoundingClientRect();
         console.debug('[GUt] Screen size', width, height);
         return width > height;
