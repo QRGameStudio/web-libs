@@ -1,4 +1,4 @@
-function GRenderer(variables = null, values = null, functions = null) {
+function GRenderer(root = document.body, variables = null, values = null, functions = null) {
     this.variables = variables === null ? {} : variables;
     this.values = values === null ? {} : values;
     this.functions = functions === null ? {} : functions;
@@ -28,7 +28,7 @@ function GRenderer(variables = null, values = null, functions = null) {
     };
 
     this.render = (element = null, localVariables = null) => {
-        if (element === null) element = document.body;
+        if (element === null) element = root;
         if (localVariables === null) localVariables = {};
 
         localVariables = localContext(element, localVariables);
@@ -197,7 +197,7 @@ function GRenderer(variables = null, values = null, functions = null) {
         const w = this.values;
 
         // fetch all values
-        document.querySelectorAll('[r-val]').forEach(el => {
+        root.querySelectorAll('[r-val]').forEach(el => {
             // noinspection JSUnusedLocalSymbols
             const currValue = el.value || null;
             const variable = el.getAttribute('r-val');
@@ -212,14 +212,14 @@ function GRenderer(variables = null, values = null, functions = null) {
         // noinspection JSUnusedLocalSymbols
         const w = this.values;
 
-        document.querySelectorAll('[r-val]').forEach(el => {
+        root.querySelectorAll('[r-val]').forEach(el => {
             const variable = el.getAttribute('r-val');
             el.value = eval(variable) || '';
         });
     };
 
     this.getValue = (value) => {
-        const el = document.querySelector(`[r-val="w.${value}"]`);
+        const el = root.querySelector(`[r-val="w.${value}"]`);
         if (!el) return null;
         return this.values[value] = el.value;
     };
@@ -227,7 +227,7 @@ function GRenderer(variables = null, values = null, functions = null) {
     // noinspection JSUnusedGlobalSymbols
     this.setValue = (value, valueValue) => {
         this.values[value] = valueValue;
-        document.querySelectorAll(`[r-val="w.${value}"]`).forEach(el => el.value = valueValue);
+        root.querySelectorAll(`[r-val="w.${value}"]`).forEach(el => el.value = valueValue);
     };
 
     if (!!Object.keys(this.values).length) {
@@ -236,7 +236,7 @@ function GRenderer(variables = null, values = null, functions = null) {
 
     const operands = [];
 
-    ['r-for', 'r-if'].forEach(s => document.querySelectorAll(`[${s}]`).forEach(el => {
+    ['r-for', 'r-if'].forEach(s => root.querySelectorAll(`[${s}]`).forEach(el => {
         operands.push(el);
     }));
     operands.reverse();
@@ -254,7 +254,7 @@ function GRenderer(variables = null, values = null, functions = null) {
     });
 
     const style = document.createElement('style');
-    document.body.appendChild(style);
+    root.appendChild(style);
     style.innerHTML = `
     .r-hidden {
         visibility: hidden !important;
