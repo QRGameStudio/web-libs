@@ -102,8 +102,15 @@ class GEG {
         this.canvas.setAttribute('tabindex', `${Math.floor(Math.random() * 10000)}`);
         this.canvas.addEventListener('resize', () => this.__rescaleCanvas());
         this.canvas.addEventListener('click', (event) => {
-            const {x, y} = event;
-            this.onClick(x, y);
+            let {x, y} = event;
+            const realSize = this.canvas.getBoundingClientRect();
+            x *= this.w / realSize.width;
+            y *= this.h / realSize.height;
+
+            this.onClick(
+                Math.round(x - this.cameraOffset.x),
+                Math.round(y - this.cameraOffset.y)
+            );
         });
         this.canvas.addEventListener('keydown', (event) => {
             const { key } = event;
@@ -671,7 +678,25 @@ class GEO {
      * @return {number}
      */
     distanceFrom(other) {
-        return Math.sqrt(((this.x - other.x) ** 2) + ((this.y - other.y) ** 2));
+        return this.distanceTo({x: other.x, y: other.y});
+    }
+
+    /**
+     * Distance to a point
+     * @param point {GPoint}
+     * @return {number}
+     */
+    distanceTo(point) {
+        return Math.sqrt(((this.x - point.x) ** 2) + ((this.y - point.y) ** 2));
+    }
+
+    /**
+     * Angle to look at a point
+     * @param point {GPoint}
+     * @return {number}
+     */
+    angleTo(point) {
+        return GUt.countAngle(point.x - this.x, point.y - this.y);
     }
 
     /**
