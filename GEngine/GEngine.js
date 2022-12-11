@@ -183,6 +183,14 @@ class GEG {
         return this.h / 2;
     }
 
+    /**
+     * Radius
+     * @return {number} max of this.wh, this.hh
+     */
+    get r() {
+        return Math.max(this.wh, this.hh);
+    }
+
     // noinspection JSUnusedGlobalSymbols
     /**
      * Force-sets new resolution, null for auto resolution
@@ -364,9 +372,6 @@ class GEG {
      */
     __checkCollisions() {
         this.objects.forEach((o1, i1) => {
-            if (o1.cwl.size === 0) {
-                return;
-            }
             for (let i2 = i1 + 1; i2 < this.objects.length; i2++) {
                 const o2 = this.objects[i2];
                 const o1Accepts = o1.cwl.has(o2.t);
@@ -451,6 +456,11 @@ class GEO {
          * @type {number}
          */
         this.h = 0;
+        /**
+         * Object-specific data
+         * @type {Map<string, any>}
+         */
+        this.data = new Map();
         /**
          * Horizontal speed
          * @type {number}
@@ -656,6 +666,15 @@ class GEO {
     }
 
     /**
+     * Distance from another object
+     * @param other {GEO}
+     * @return {number}
+     */
+    distanceFrom(other) {
+        return Math.sqrt(((this.x - other.x) ** 2) + ((this.y - other.y) ** 2));
+    }
+
+    /**
      * Tests if is colliding with other object
      * Performs pixel-perfect collision if two objects are close enough
      * @param other {GEO}
@@ -672,8 +691,7 @@ class GEO {
         }
 
         // quick test if object are able to have collision
-        const distance = Math.sqrt(((this.x - other.x) ** 2) + ((this.y - other.y) ** 2));
-        if (!forcePixelPerfectCollision && distance > radius + radiusOther) {
+        if (!forcePixelPerfectCollision && this.distanceFrom(other) > radius + radiusOther) {
             return false;
         }
 

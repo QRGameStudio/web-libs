@@ -64,5 +64,7 @@ function GTheme() {
 // noinspection JSUnresolvedVariable
 if (typeof $ !== 'undefined') {
     // noinspection JSUnresolvedFunction
-    $(document).ready(() => new GTheme().apply())
+    try {
+        $(document).ready(() => new GTheme().apply())
+    } catch (e) {}
 }
