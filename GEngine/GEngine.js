@@ -1,4 +1,8 @@
 /**
+ * @typedef {{x: number, y: number}} GPoint
+ */
+
+/**
  * Game engine
  */
 class GEG {
@@ -32,6 +36,18 @@ class GEG {
          * @private
          */
         this.__keys_down = {};
+
+        /**
+         * @type {GPoint}
+         * @private
+         */
+        this.__cameraOffset = {x: 0, y: 0};
+
+        /**
+         * @type {GEO | null}
+         * Camera automatically follows this object if it is alive
+         */
+        this.__cameraFollowObject = null;
 
         this.onStep = () => {
         };
@@ -144,11 +160,27 @@ class GEG {
     }
 
     /**
+     * Width half
+     * @return {number}
+     */
+    get wh() {
+        return this.w / 2;
+    }
+
+    /**
      * Height
      * @return {number}
      */
     get h() {
         return this.canvas.height;
+    }
+
+    /**
+     * Height half
+     * @return {number}
+     */
+    get hh() {
+        return this.h / 2;
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -229,6 +261,50 @@ class GEG {
     }
 
     /**
+     * Gets current camera offset
+     * @return {GPoint}
+     */
+    get cameraOffset() {
+        return {...this.__cameraOffset};
+    }
+
+    /**
+     * Sets and applies new camera offset
+     * @param point {GPoint}
+     */
+    set cameraOffset(point) {
+        const current = this.cameraOffset;
+        const diff = {
+            x: point.x - current.x,
+            y: point.y - current.y
+        };
+        this.__cameraOffset = {...point};
+        if (diff.x !== 0 || diff.y !== 0) {
+            this.ctx.translate(diff.x, diff.y);
+        }
+    }
+
+    /**
+     * Sets and applies new camera offset
+     * @param point {GPoint}
+     */
+    set cameraCenter(point) {
+        this.cameraOffset = {
+            x: this.wh - point.x,
+            y: this.hh - point.y
+        }
+    }
+
+    /**
+     * Camera will center on this object and will move with it
+     * Set to null to clear following status
+     * @param object {GEO | null}
+     */
+    set cameraFollowObject(object) {
+        this.__cameraFollowObject = object;
+    }
+
+    /**
      * How many milliseconds one step takes
      * @returns {number}
      */
@@ -265,13 +341,23 @@ class GEG {
         const {ctx, canvas} = this;
 
         ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(-this.__cameraOffset.x, -this.__cameraOffset.y, canvas.width, canvas.height);
 
         this.onDraw(ctx, canvas);
         this.objects.forEach((o) => {
             // noinspection JSUnresolvedFunction
             o.__draw();
+
+            if (o === this.__cameraFollowObject) {
+                this.cameraCenter = {
+                    x: o.cx,
+                    y: o.cy
+                }
+            }
         });
+
+        ctx.strokeStyle = 'red';
+        ctx.strokeRect(-this.__cameraOffset.x, -this.__cameraOffset.y, canvas.width, canvas.height);
     }
 
     /**
@@ -310,6 +396,10 @@ class GEG {
      * @return {void}
      */
     __removeDeadObjects() {
+        if (this.__cameraFollowObject !== null && this.__deadObjects.has(this.__cameraFollowObject)) {
+            this.__cameraFollowObject = null;
+        }
+
         this.objects = this.objects.filter((o) => !this.__deadObjects.has(o));
         this.__deadObjects.clear();
     }
@@ -434,6 +524,24 @@ class GEO {
      */
     get hh() {
         return this.h / 2;
+    }
+
+    /**
+     * Center X
+     * @return {number}
+     */
+    get cx() {
+        const directionRad = GUt.degToRad(this.__direction);
+        return this.x + (this.wh * Math.cos(directionRad));
+    }
+
+    /**
+     * Center Y
+     * @return {number}
+     */
+    get cy() {
+        const directionRad = GUt.degToRad(this.__direction);
+        return this.y + (this.hh * Math.sin(directionRad));
     }
 
     /**
