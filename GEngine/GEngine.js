@@ -680,14 +680,22 @@ class GEO {
         // pixel-perfect collision detection
         const gameCopyCanvas = document.createElement('canvas');
         const ctx = gameCopyCanvas.getContext('2d');
+
+        /**
+         * Gets sum of all pixels in 2x radius from object
+         * @return {number}
+         */
+        const getImageSum = () => ctx.getImageData(this.x + this.game.__cameraOffset.x - radius, this.y + this.game.__cameraOffset.y - radius, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
+
         gameCopyCanvas.width = this.game.w;
         gameCopyCanvas.height = this.game.h;
+        ctx.translate(this.game.__cameraOffset.x, this.game.__cameraOffset.y);
         const radius2x = radius * 2;
         this.__draw(ctx);
-        const sumOrig = ctx.getImageData(this.x - radius, this.y - radius, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
+        const sumOrig = getImageSum();
         ctx.globalCompositeOperation = "destination-out";
         other.__draw(ctx);
-        const sumNew = ctx.getImageData(this.x - radius, this.y - radius, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
+        const sumNew = getImageSum();
         return sumOrig !== sumNew;
     }
 
