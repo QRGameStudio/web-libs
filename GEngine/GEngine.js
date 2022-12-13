@@ -379,8 +379,15 @@ class GEG {
      */
     __checkCollisions() {
         this.objects.forEach((o1, i1) => {
+            if (o1.is_dead) {
+                return;
+            }
+
             for (let i2 = i1 + 1; i2 < this.objects.length; i2++) {
                 const o2 = this.objects[i2];
+                if (o2.is_dead) {
+                    continue;
+                }
                 const o1Accepts = o1.cwl.has(o2.t);
                 const o2Accepts = o2.cwl.has(o1.t);
                 if (!o1Accepts && !o2Accepts) {
@@ -522,6 +529,13 @@ class GEO {
          * @private
          */
         this.__onscreenborderTriggered = false;
+
+        /**
+         * True after .die() is called
+         * @type {boolean}
+         * @private
+         */
+        this.__is_dead = false;
     }
 
     /**
@@ -670,6 +684,15 @@ class GEO {
      */
     die() {
         this.game.removeObject(this);
+        this.__is_dead = true;
+    }
+
+    /**
+     * Checks if .die() was already called
+     * @return {boolean}
+     */
+    get is_dead() {
+        return this.__is_dead;
     }
 
     /**
@@ -740,6 +763,17 @@ class GEO {
         other.__draw(ctx);
         const sumNew = getImageSum();
         return sumOrig !== sumNew;
+    }
+
+    /**
+     * Gets the nearest object of given type
+     * @param type {string}
+     * @return {GEO | undefined}
+     */
+    getNearest(type) {
+        return this.game.objects
+            .filter((x) => x.t === type)
+            .sort((a, b) => this.distanceFrom(a) - this.distanceFrom(b))[0];
     }
 
     /**
