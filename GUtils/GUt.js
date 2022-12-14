@@ -64,6 +64,28 @@ class GUt {
     }
 
     /**
+     * Transforms relative angle <-180, 180> to absolute angle <0, 360>
+     * @param angle {number} relative or absolute angle
+     * @return {number} absolute angle
+     */
+    static absoluteAngle(angle) {
+        return ((angle % 360) + 360) % 360;
+    }
+
+    /**
+     * Transforms relative absolute angle <0, 360> to angle <-180, 180>
+     * @param angle {number} relative or absolute angle
+     * @return {number} relative angle
+     */
+    static relativeAngle(angle) {
+        angle = GUt.absoluteAngle(angle);
+        if (angle > 180) {
+            angle = -(360 - angle);
+        }
+        return angle;
+    }
+
+    /**
      * Computes point position relative to the center with given rotation
      * @param centerX {number} x position of the center
      * @param centerY {number} y position of the center

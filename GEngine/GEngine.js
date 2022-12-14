@@ -593,7 +593,7 @@ class GEO {
      * @param degrees {number}
      */
     set d(degrees) {
-        degrees %= 360;
+        degrees = GUt.absoluteAngle(degrees);
         const { s } = this;
         const directionRad = GUt.degToRad(degrees);
         this.__sx = s * Math.cos(directionRad);
