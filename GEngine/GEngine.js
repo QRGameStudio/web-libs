@@ -97,6 +97,12 @@ class GEG {
          */
         this.__forcedResolution = null;
 
+        /**
+         * Game zoom level
+         * @type {number}
+         */
+        this.__zoom = 1;
+
         this.__rescaleCanvas();
         // hook events
         this.canvas.setAttribute('tabindex', `${Math.floor(Math.random() * 10000)}`);
@@ -205,6 +211,15 @@ class GEG {
      */
     set res(resolution) {
         this.__forcedResolution = resolution ? {width: resolution.w, height: resolution.h} : null;
+        this.__rescaleCanvas();
+    }
+
+    /**
+     * Sets new zoom level
+     * @param value {number}
+     */
+    set zoom(value) {
+        this.__zoom = value;
         this.__rescaleCanvas();
     }
 
@@ -431,12 +446,15 @@ class GEG {
         console.debug(`[GEG] Scaling canvas to ${width}x${height}`);
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
+
+        const zoom = 1 / this.__zoom;
+
         if (!this.__forcedResolution) {
-            canvas.height = height;
-            canvas.width = width;
+            canvas.height = Math.round(height * zoom);
+            canvas.width = Math.round(width * zoom);
         } else {
-            canvas.height = this.__forcedResolution.height;
-            canvas.width = this.__forcedResolution.width;
+            canvas.height = Math.round(this.__forcedResolution.height * zoom);
+            canvas.width = Math.round(this.__forcedResolution.width * zoom);
         }
     }
 }
