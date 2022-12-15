@@ -223,6 +223,16 @@ class GEG {
         this.__rescaleCanvas();
     }
 
+    /**
+     * Computes distance between two points
+     * @param a {{x: number, y: number}} point A
+     * @param b {{x: number, y: number}} point B
+     * @return {number}
+     */
+    distanceBetween(a, b) {
+        return Math.sqrt(((a.x - b.x) ** 2) + ((a.y - b.y) ** 2));
+    }
+
     // noinspection JSUnusedGlobalSymbols
     /**
      * Star the game loop
@@ -695,6 +705,17 @@ class GEO {
         return (directionSum > 359 && directionSum < 361) || (directionSum < 1 && directionSum > -1);
     }
 
+    /**
+     * Gets the position in next step with current speed
+     * @return {{x: number, y: number}}
+     */
+    get nextPos() {
+        return {
+            x: this.x + this.sx,
+            y: this.y + this.sy
+        }
+    }
+
     // noinspection JSUnusedGlobalSymbols
     /**
      * Remove this object from game
@@ -728,7 +749,7 @@ class GEO {
      * @return {number}
      */
     distanceTo(point) {
-        return Math.sqrt(((this.x - point.x) ** 2) + ((this.y - point.y) ** 2));
+        return this.game.distanceBetween({x: this.x, y: this.y}, point);
     }
 
     /**
