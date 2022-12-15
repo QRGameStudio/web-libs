@@ -807,12 +807,14 @@ class GEO {
     /**
      * Gets the nearest object of given type
      * @param type {string}
-     * @return {GEO | undefined}
+     * @param maxDistance {number | null}
+     * @return {GEO | null}
      */
-    getNearest(type) {
-        return this.game.objects
+    getNearest(type, maxDistance = null) {
+        const x = this.game.objects
             .filter((x) => x.t === type)
             .sort((a, b) => this.distanceFrom(a) - this.distanceFrom(b))[0];
+        return x !== undefined && (maxDistance === null  || this.distanceFrom(x) <= maxDistance) ? x : null;
     }
 
     /**
