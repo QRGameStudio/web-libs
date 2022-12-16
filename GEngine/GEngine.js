@@ -385,15 +385,19 @@ class GEG {
 
         this.onDraw(ctx, canvas);
         this.objects.forEach((o) => {
-            // noinspection JSUnresolvedFunction
-            o.__draw();
-
             if (o === this.__cameraFollowObject) {
                 this.cameraCenter = {
                     x: o.cx,
                     y: o.cy
                 }
             }
+
+            if (!o.isVisible) {
+                return;
+            }
+
+            // noinspection JSUnresolvedFunction
+            o.__draw();
         });
     }
 
@@ -404,13 +408,13 @@ class GEG {
      */
     __checkCollisions() {
         this.objects.forEach((o1, i1) => {
-            if (o1.is_dead) {
+            if (o1.isDead) {
                 return;
             }
 
             for (let i2 = i1 + 1; i2 < this.objects.length; i2++) {
                 const o2 = this.objects[i2];
-                if (o2.is_dead) {
+                if (o2.isDead) {
                     continue;
                 }
                 const o1Accepts = o1.cwl.has(o2.t);
@@ -712,7 +716,18 @@ class GEO {
     get nextPos() {
         return {
             x: this.x + this.sx,
-            y: this.y + this.sy
+            y: this.y - this.sy
+        }
+    }
+
+    /**
+     * Gets the current position
+     * @return {{x: number, y: number}}
+     */
+    get pos() {
+        return {
+            x: this.x,
+            y: this.y
         }
     }
 
@@ -730,7 +745,7 @@ class GEO {
      * Checks if .die() was already called
      * @return {boolean}
      */
-    get is_dead() {
+    get isDead() {
         return this.__is_dead;
     }
 
@@ -869,6 +884,36 @@ class GEO {
     }
 
     /**
+     * Checks if the object is visible on screen
+     * @return {boolean} true if the object is visible on screen
+     */
+    get isVisible() {
+        const radius = this.r;
+        const game = this.game;
+        const offset = this.game.__cameraOffset;
+
+        return !(this.x + radius < -offset.x ||
+            this.x - radius > game.w - offset.x ||
+            this.y + radius < -offset.y ||
+            this.y - radius > game.h - offset.y);
+    }
+
+    /**
+     * Checks if the object is touching the screen border
+     * @return {boolean} true if the object is touching the screen border
+     */
+    get isTouchingBorder() {
+        const radius = this.r;
+        const game = this.game;
+        const offset = this.game.__cameraOffset;
+
+        return this.x - radius < -offset.x ||
+        this.y - radius < -offset.y ||
+        this.x + radius > game.w - offset.x ||
+        this.y + radius > game.h - offset.y;
+    }
+
+    /**
      * Perform move by the speed and launch step event of this object
      * @private
      * @return {void}
@@ -877,27 +922,15 @@ class GEO {
         this.x += this.sx;
         this.y -= this.sy;
 
-        const radius = this.r;
-        const game = this.game;
-        const offset = this.game.__cameraOffset;
-
         // test if object has left the screen
-        if (this.x + radius < -offset.x ||
-            this.x - radius > game.w - offset.x ||
-            this.y + radius < -offset.y ||
-            this.y - radius > game.h - offset.y) {
+        if (!this.isVisible) {
             if (!this.__onscreenleftTriggered) {
                 this.__onscreenleftTriggered = true;
                 this.onscreenleft();
             }
         } else if (this.__onscreenleftTriggered) {
             this.__onscreenleftTriggered = false;
-        } else if (
-            this.x - radius < -offset.x ||
-            this.y - radius < -offset.y ||
-            this.x + radius > game.w - offset.x ||
-            this.y + radius > game.h - offset.y
-        ) {
+        } else if (this.isTouchingBorder) {
             if (!this.__onscreenborderTriggered) {
                 this.onscreenborder();
                 this.__onscreenborderTriggered = true;
