@@ -333,14 +333,12 @@ class GEG {
      */
     set cameraOffset(point) {
         const current = this.cameraOffset;
-        const diff = {
-            x: point.x - current.x,
-            y: point.y - current.y
-        };
-        this.__cameraOffset = {...point};
-        if (diff.x !== 0 || diff.y !== 0) {
-            this.ctx.translate(diff.x, diff.y);
-        }
+        const newOffset = {x: Math.round(point.x), y: Math.round(point.y)};
+
+        this.ctx.translate(-current.x, -current.y);
+        this.ctx.translate(newOffset.x, newOffset.y);
+
+        this.__cameraOffset = newOffset;
     }
 
     /**
