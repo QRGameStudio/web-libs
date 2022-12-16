@@ -233,6 +233,25 @@ class GEG {
         return Math.sqrt(((a.x - b.x) ** 2) + ((a.y - b.y) ** 2));
     }
 
+    /**
+     * Gets the nearest objects of given type
+     * @param point {{x: number, y: number}}
+     * @param type {string|Set<string>}
+     * @param maxDistance {number | null}
+     * @param count {number|null}
+     * @return {GEO[]}
+     */
+    getNearest(point, type, maxDistance = null, count = null) {
+        if (typeof type === "string") {
+            type = new Set([type]);
+        }
+
+        const objects = this.objects
+            .filter((x) => type.has(x.t) && (maxDistance === null || this.distanceBetween(point, x) <= maxDistance))
+            .sort((a, b) => this.distanceBetween(point, a) - this.distanceBetween(point, b));
+        return count === null ? objects : objects.slice(0, count);
+    }
+
     // noinspection JSUnusedGlobalSymbols
     /**
      * Star the game loop
@@ -483,6 +502,26 @@ class GEO {
      */
     constructor(game) {
         /**
+         * Game that this object is assigned to
+         * @type {GEG}
+         */
+        this.game = game;
+
+        /**
+         * A unique ID of this object instance, nonce
+         * @type {number}
+         */
+        this.id = Math.floor(Math.random() * Math.pow(2, 31));
+
+        while (true) {
+            if (this.game.objects.some((obj) => obj.id === this.id)) {
+                this.id = Math.floor(Math.random() * Math.pow(2, 31));
+            } else {
+                break;
+            }
+        }
+
+        /**
          * X coordinate
          * @type {number}
          */
@@ -544,11 +583,6 @@ class GEO {
          */
         this.cwl = new Set();
 
-        /**
-         * Game that this object is assigned to
-         * @type {GEG}
-         */
-        this.game = game;
         this.game.objects.push(this);
 
         /**
@@ -821,15 +855,24 @@ class GEO {
 
     /**
      * Gets the nearest object of given type
-     * @param type {string}
+     * @param type {string | Set<string>}
      * @param maxDistance {number | null}
      * @return {GEO | null}
      */
     getNearest(type, maxDistance = null) {
-        const x = this.game.objects
-            .filter((x) => x.t === type)
-            .sort((a, b) => this.distanceFrom(a) - this.distanceFrom(b))[0];
-        return x !== undefined && (maxDistance === null  || this.distanceFrom(x) <= maxDistance) ? x : null;
+        const x = this.getNearests(type, maxDistance, 1)[0];
+        return x !== undefined ? x : null;
+    }
+
+    /**
+     * Gets the nearests objects of given type
+     * @param type {string|Set<string>}
+     * @param maxDistance {number | null}
+     * @param count {number|null}
+     * @return {GEO[]}
+     */
+    getNearests(type, maxDistance = null, count = null) {
+        return this.game.getNearest(this, type, maxDistance, count);
     }
 
     /**
