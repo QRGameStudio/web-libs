@@ -17,6 +17,11 @@ class GEG {
         this.canvas = canvas;
 
         /**
+         * @type {HTMLCanvasElement}
+         */
+        this.collisionCanvas = document.createElement('canvas');
+
+        /**
          * Type to objects map
          * @type {Map<string, Set<GEO>>}
          */
@@ -470,33 +475,38 @@ class GEG {
      */
     __checkCollisions() {
         /**
-         * @type {Set<GEO>}
+         * @type {Map<GEO, Set<GEO>>}
          */
-        const previousObjects = new Set();
+        const knownCollisions = new Map();
+
+        /**
+         * @param o1 {GEO}
+         * @param o2 {GEO}
+         */
+        const addKnownCollision = (o1, o2) => {
+            if (!knownCollisions.has(o1)) {
+                knownCollisions.set(o1, new Set());
+            }
+            if (!knownCollisions.has(o2)) {
+                knownCollisions.set(o2, new Set());
+            }
+            knownCollisions.get(o1).add(o2);
+            knownCollisions.get(o2).add(o1);
+        };
 
         for (const o1 of this.objects()) {
             if (o1.isDead) {
                 return;
             }
 
-            for (const o2 of previousObjects) {
-                const o1Accepts = o1.cwl.has(o2.t);
-                const o2Accepts = o2.cwl.has(o1.t);
-                if (!o1Accepts && !o2Accepts) {
-                    continue;
-                }
-                const collides = o1.isCol(o2);
+            for (const o2 of this.objectsOfTypes(o1.cwl)) {
+                const collides = knownCollisions.get(o1)?.has(o2) || o1.isCol(o2);
+
                 if (collides) {
-                    if (o1Accepts) {
-                        o1.oncollision(o2);
-                    }
-                    if (o2Accepts) {
-                        o2.oncollision(o1);
-                    }
+                    addKnownCollision(o1, o2);
+                    o1.oncollision(o2);
                 }
             }
-
-            previousObjects.add(o1);
         }
     }
 
@@ -914,7 +924,7 @@ class GEO {
         }
 
         // pixel-perfect collision detection
-        const gameCopyCanvas = document.createElement('canvas');
+        const gameCopyCanvas = this.game.collisionCanvas;
         const ctx = gameCopyCanvas.getContext('2d');
 
         /**
