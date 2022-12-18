@@ -17,9 +17,10 @@ class GEG {
         this.canvas = canvas;
 
         /**
-         * @type {Array<GEO>}
+         * Type to objects map
+         * @type {Map<string, Set<GEO>>}
          */
-        this.objects = [];
+        this.__objects = new Map();
 
         /**
          * @type {number}
@@ -246,10 +247,21 @@ class GEG {
             type = new Set([type]);
         }
 
-        const objects = this.objects
-            .filter((x) => type.has(x.t) && (maxDistance === null || this.distanceBetween(point, x) <= maxDistance))
-            .sort((a, b) => this.distanceBetween(point, a) - this.distanceBetween(point, b));
-        return count === null ? objects : objects.slice(0, count);
+        /**
+         *
+         * @type {GEO[]}
+         */
+        const objectsInDistance = [];
+        for (const object of this.objectsOfTypes(type)) {
+            if (maxDistance !== null && this.distanceBetween(point, object) > maxDistance) {
+                continue;
+            }
+
+            objectsInDistance.push(object);
+        }
+
+        objectsInDistance.sort((a, b) => this.distanceBetween(point, a) - this.distanceBetween(point, b));
+        return count === null ? objectsInDistance : objectsInDistance.slice(0, count);
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -335,6 +347,10 @@ class GEG {
         const current = this.cameraOffset;
         const newOffset = {x: Math.round(point.x), y: Math.round(point.y)};
 
+        if (current.x === newOffset.x && current.y === newOffset.y) {
+            return;
+        }
+
         this.ctx.translate(-current.x, -current.y);
         this.ctx.translate(newOffset.x, newOffset.y);
 
@@ -377,16 +393,45 @@ class GEG {
     }
 
     /**
+     * All objects
+     * @return {Iterator<GEO>}
+     */
+    *objects() {
+        for (const objects of this.__objects.values()) {
+            for (const object of objects) {
+                yield object;
+            }
+        }
+    }
+
+    /**
+     * Get all objects of given types
+     * @param types {Set<string>}
+     * @return {Iterator<GEO>}
+     */
+    *objectsOfTypes(types) {
+        for (const type of types) {
+            if (!this.__objects.has(type)) {
+                continue;
+            }
+
+            for (const object of this.__objects.get(type)) {
+                yield object;
+            }
+        }
+    }
+
+    /**
      * Perform one step on the game and all objects
      * @private
      * @return {void}
      */
     __step() {
         this.onStep();
-        this.objects.forEach((o) => {
+        for (const o of this.objects()) {
             // noinspection JSUnresolvedFunction
             o.__gameStep();
-        });
+        }
     }
 
     /**
@@ -401,7 +446,7 @@ class GEG {
         ctx.fillRect(-this.__cameraOffset.x, -this.__cameraOffset.y, canvas.width, canvas.height);
 
         this.onDraw(ctx, canvas);
-        this.objects.forEach((o) => {
+        for (const o of this.objects()) {
             if (o === this.__cameraFollowObject) {
                 this.cameraCenter = {
                     x: o.cx,
@@ -410,12 +455,12 @@ class GEG {
             }
 
             if (!o.isVisible) {
-                return;
+                continue;
             }
 
             // noinspection JSUnresolvedFunction
             o.__draw();
-        });
+        }
     }
 
     /**
@@ -424,16 +469,17 @@ class GEG {
      * @return {void}
      */
     __checkCollisions() {
-        this.objects.forEach((o1, i1) => {
+        /**
+         * @type {Set<GEO>}
+         */
+        const previousObjects = new Set();
+
+        for (const o1 of this.objects()) {
             if (o1.isDead) {
                 return;
             }
 
-            for (let i2 = i1 + 1; i2 < this.objects.length; i2++) {
-                const o2 = this.objects[i2];
-                if (o2.isDead) {
-                    continue;
-                }
+            for (const o2 of previousObjects) {
                 const o1Accepts = o1.cwl.has(o2.t);
                 const o2Accepts = o2.cwl.has(o1.t);
                 if (!o1Accepts && !o2Accepts) {
@@ -449,7 +495,9 @@ class GEG {
                     }
                 }
             }
-        });
+
+            previousObjects.add(o1);
+        }
     }
 
     /**
@@ -462,7 +510,7 @@ class GEG {
             this.__cameraFollowObject = null;
         }
 
-        this.objects = this.objects.filter((o) => !this.__deadObjects.has(o));
+        this.__deadObjects.forEach((o) => this.__objects.get(o.t)?.delete(o));
         this.__deadObjects.clear();
     }
 
@@ -512,7 +560,15 @@ class GEO {
         this.id = Math.floor(Math.random() * Math.pow(2, 31));
 
         while (true) {
-            if (this.game.objects.some((obj) => obj.id === this.id)) {
+            let duplicateId = false;
+
+            for (const object of this.game.objects()) {
+                if (object.id === this.id) {
+                    duplicateId = true;
+                    break;
+                }
+            }
+            if (duplicateId) {
                 this.id = Math.floor(Math.random() * Math.pow(2, 31));
             } else {
                 break;
@@ -561,7 +617,9 @@ class GEO {
          * Type of this object
          * @type {string}
          */
+        this.__type = undefined;
         this.t = '';
+
         /**
          * Image angle
          * null means same as direction, 0 to disable rotation
@@ -581,8 +639,6 @@ class GEO {
          */
         this.cwl = new Set();
 
-        this.game.objects.push(this);
-
         /**
          * @type {boolean}
          * @private
@@ -600,6 +656,34 @@ class GEO {
          * @private
          */
         this.__is_dead = false;
+    }
+
+    /**
+     * Type of this object
+     * @return {string}
+     */
+    get t() {
+        return this.__type;
+    }
+
+    /**
+     * Set new type of this object
+     * @param value {string}
+     */
+    set t(value) {
+        if (value === this.__type) {
+            return;
+        }
+
+        this.game.__objects.get(this.__type)?.delete(this);
+
+        if (!this.game.__objects.has(value)) {
+            this.game.__objects.set(value, new Set());
+        }
+
+        const newObjectsSets = this.game.__objects.get(value);
+        newObjectsSets.add(this);
+        this.__type = value;
     }
 
     /**
@@ -752,6 +836,7 @@ class GEO {
         }
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Gets the current position
      * @return {{x: number, y: number}}
@@ -763,7 +848,6 @@ class GEO {
         }
     }
 
-    // noinspection JSUnusedGlobalSymbols
     /**
      * Remove this object from game
      * @return {void}
