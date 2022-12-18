@@ -427,6 +427,17 @@ class GEG {
     }
 
     /**
+     * Opens new window with the collision detection canvas
+     * Useful for debugging
+     */
+    openCollisionWindow() {
+        const win = window.open();
+        win.document.body.append(this.collisionCanvas);
+        this.collisionCanvas.style.border = '1px dashed red';
+        win.document.body.style.background = 'black';
+    }
+
+    /**
      * Perform one step on the game and all objects
      * @private
      * @return {void}
@@ -927,16 +938,19 @@ class GEO {
         const gameCopyCanvas = this.game.collisionCanvas;
         const ctx = gameCopyCanvas.getContext('2d');
 
+        const radius2x = radius * 2;
+
         /**
          * Gets sum of all pixels in 2x radius from object
          * @return {number}
          */
-        const getImageSum = () => ctx.getImageData(this.x + this.game.__cameraOffset.x - radius, this.y + this.game.__cameraOffset.y - radius, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
+        const getImageSum = () => ctx.getImageData(0, 0, radius2x, radius2x).data.reduce((a, b) => a + b, 0);
 
-        gameCopyCanvas.width = this.game.w;
-        gameCopyCanvas.height = this.game.h;
-        ctx.translate(this.game.__cameraOffset.x, this.game.__cameraOffset.y);
-        const radius2x = radius * 2;
+        // noinspection JSSuspiciousNameCombination
+        gameCopyCanvas.width = radius2x;
+        // noinspection JSSuspiciousNameCombination
+        gameCopyCanvas.height = radius2x;
+        ctx.translate(-this.x + radius, -this.y + radius);
         this.__draw(ctx);
         const sumOrig = getImageSum();
         ctx.globalCompositeOperation = "destination-out";
