@@ -16,7 +16,7 @@ JS renderer has 4 main scopes that can be used inside HTML code:
 - `r-if="condition"` - only if `eval(condition)` is true, this element will be shown
 - `r-for="number of [1, 2, 3]"` - will create this element 3 times, with local variable `number` having values `1`, then `2` and then `3`
 - `r-click="function(params)"` - will execute given function on click on this element
-- `r-attr="{&quot;style&quot;: &quot;val&quot;}"` - will set the attribute `style` of this element to `eval(val)`
+- `r-attr="{&quot;style&quot;: &quot;val&quot;}"` - will set the attribute `style` of this element to `eval(val)`. The the evaluated expression results in `undefined`, then removes the attribute (e. g. for `disabled` attribute on `input` to work).
 
 ### GRenderer example
 
@@ -24,7 +24,7 @@ The code
 
 ```html
 <h1 r-var="v.title"
-    r-attr="{&quot;style&quot;: &quot;'color: ' + v.titleColor + ';'&quot;}">
+    r-attr="{"style": "'color: ' + v.titleColor + ';'"}">
 </h1>
 <ul>
     <li r-for="name of v.names">

@@ -73,7 +73,12 @@ function GRenderer(root = document.body, variables = null, values = null, functi
                     } catch {
                         val = '';
                     }
-                    el.setAttribute(attr, `${val}`);
+                    
+                    if (val !== undefined) {
+                        el.setAttribute(attr, `${val}`);
+                    } else {
+                        el.removeAttribute(attr);
+                    }
                 });
                 el.setAttribute('r-local-context', JSON.stringify(l));
             }
