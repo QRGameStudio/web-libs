@@ -38,6 +38,12 @@ class GEG {
         this.paused = false;
 
         /**
+         *
+         * @type {number|null}
+         */
+        this.hearingDistance = null;
+
+        /**
          * @type {Object.<string, boolean>}
          * @private
          */
@@ -370,6 +376,17 @@ class GEG {
         this.cameraOffset = {
             x: this.wh - point.x,
             y: this.hh - point.y
+        }
+    }
+
+    /**
+     * Gets the center of camera
+     * @return {GPoint}
+     */
+    get cameraCenter() {
+        return {
+            x: -this.__cameraOffset.x,
+            y: -this.__cameraOffset.y
         }
     }
 
@@ -867,6 +884,22 @@ class GEO {
             x: this.x,
             y: this.y
         }
+    }
+
+    /**
+     * Gets the loudness of sound as if it was emitted from within this object
+     * @return {number} loudness in percent
+     */
+    get soundVolume() {
+        if (this.game.hearingDistance === null) {
+            return 100;
+        }
+        const dist = this.distanceTo(this.game.cameraCenter);
+        if (dist > this.game.hearingDistance) {
+            return 0;
+        }
+
+        return 100 * dist / this.game.hearingDistance;
     }
 
     /**
