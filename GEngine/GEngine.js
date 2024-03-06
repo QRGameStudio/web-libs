@@ -28,6 +28,12 @@ class GEG {
         this.__objects = new Map();
 
         /**
+         * Set of all clickable objects
+         * @type {Set<GEO>}
+         */
+        this.clickableObjects = new Set();
+
+        /**
          * @type {number}
          */
         this.fps = 30;
@@ -74,9 +80,10 @@ class GEG {
         /**
          * @param x {number}
          * @param y {number}
+         * @param clickedObjects {Set<GEO>}
          */
-        this.onClick = (x, y) => {
-            console.debug(`[GEG] Clicked at ${x} ${y}`)
+        this.onClick = (x, y, clickedObjects) => {
+            console.debug(`[GEG] Clicked at ${x} ${y}`, clickedObjects)
         }
 
         /**
@@ -125,10 +132,39 @@ class GEG {
             x *= this.w / realSize.width;
             y *= this.h / realSize.height;
 
-            this.onClick(
-                Math.round(x - this.cameraOffset.x),
-                Math.round(y - this.cameraOffset.y)
-            );
+            x -= this.cameraOffset.x;
+            y -= this.cameraOffset.y;
+
+            /**
+             * @type {Set<GEO>}
+             */
+            const clickedObjects = new Set();
+            if (this.clickableObjects.size) {
+                const clickObject = this.createObject(x, y);
+                clickObject.w = clickObject.h = 1;
+                this.clickableObjects.forEach(o => {
+                    if (o.isVisible && o.distanceTo({x, y}) < o.r) {
+                        clickedObjects.add(o);
+                    }
+                });
+                clickObject.die();
+            }
+
+            let clickHandled = false;
+            for (const obj of clickedObjects) {
+                if (clickHandled) {
+                    break;
+                }
+                clickHandled = !!obj.onclick(x, y, clickedObjects);
+            }
+
+            if (!clickHandled) {
+                this.onClick(
+                    Math.round(x),
+                    Math.round(y),
+                    clickedObjects
+                );
+            }
         });
         this.canvas.addEventListener('keydown', (event) => {
             const { key } = event;
@@ -443,6 +479,7 @@ class GEG {
         }
     }
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Opens new window with the collision detection canvas
      * Useful for debugging
@@ -548,7 +585,12 @@ class GEG {
             this.__cameraFollowObject = null;
         }
 
-        this.__deadObjects.forEach((o) => this.__objects.get(o.t)?.delete(o));
+        this.__deadObjects.forEach((o) => {
+            this.__objects.get(o.t)?.delete(o);
+            if (this.clickableObjects.has(o)) {
+                this.clickableObjects.delete(o);
+            }
+        });
         this.__deadObjects.clear();
     }
 
@@ -900,6 +942,30 @@ class GEO {
         }
 
         return 100 * dist / this.game.hearingDistance;
+    }
+
+    /**
+     * Makes this object react to on-click event
+     * @param value {boolean}
+     */
+    set clickable(value) {
+        if (value) {
+            this.game.clickableObjects.add(this);
+        } else if (this.game.clickableObjects.has(this)) {
+            this.game.clickableObjects.delete(this);
+        }
+    }
+
+    /**
+     * Event executed when object is clickable and the object is clicked
+     * @param x {number}
+     * @param y {number}
+     * @param clickedObject {Set<GEO>}
+     * @return {boolean} if true, the click event is not propagated further
+     */
+    onclick(x, y, clickedObject) {
+        console.debug(`[GEO] Handling object click at ${x}x${y}`, clickedObject);
+        return false;
     }
 
     /**
