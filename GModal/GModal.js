@@ -72,6 +72,28 @@ function GModal() {
         });
     }
 
+    /**
+     * Gets renderer from backData passed to show
+     * @param {Object.<string, any>} backData object filled with data from the modal calling .show()
+     * @param interval {number} how often should backData be checked
+     * @param timeout {number} after how many milliseconds should the fetching give up and throw exception
+     * @return {Promise<GRenderer>}
+     */
+    this.fetchRendererFromBackData = (backData, interval = 100, timeout = 1000) => {
+        const start = Date.now();
+        return new Promise((resolve, reject) => {
+            let t = setInterval(() => {
+                if ('renderer' in backData) {
+                    resolve(backData.renderer);
+                    clearInterval(t);
+                } else if (Date.now() - start > timeout) {
+                    clearInterval(t);
+                    reject("Cannot load backData");
+                }
+            }, interval);
+        });
+    }
+
     // noinspection JSUnusedLocalSymbols
     /**
      * Shows modal of type alert
