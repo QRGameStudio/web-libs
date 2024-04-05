@@ -23,6 +23,7 @@ function GPopup(content, duration = null) {
         shown = true;
         document.body.appendChild(el);
         el.classList.add('popup-in');
+        el.addEventListener('click', () => this.remove().then());
 
         if (duration !== null)
             setTimeout(() => this.remove(), duration);
