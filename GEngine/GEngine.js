@@ -39,6 +39,12 @@ class GEG {
         this.fps = 30;
 
         /**
+         * If not null, slows down all object further from camera than specified value
+         * @type {number|null}
+         */
+        this.fullSimulationRange = null;
+
+        /**
          * @type {boolean}
          */
         this.paused = false;
@@ -66,6 +72,12 @@ class GEG {
          * Camera automatically follows this object if it is alive
          */
         this.__cameraFollowObject = null;
+
+        /**
+         * Index of current step
+         * @type {number}
+         */
+        this.stepIndex = 0;
 
         this.onStep = () => {
         };
@@ -317,6 +329,7 @@ class GEG {
      */
     run() {
         const _this = this;
+        this.stepIndex = 0;
 
         function gameLoopOnce() {
             const timeStart = Date.now();
@@ -342,6 +355,7 @@ class GEG {
         this.__draw();
         this.__checkCollisions();
         this.__removeDeadObjects();
+        this.stepIndex += 1;
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -498,7 +512,20 @@ class GEG {
      */
     __step() {
         this.onStep();
+
+        const camera = this.cameraCenter;
+        const minX = camera.x - this.fullSimulationRange;
+        const maxX = camera.x + this.fullSimulationRange;
+        const minY = camera.y - this.fullSimulationRange;
+        const maxY = camera.y + this.fullSimulationRange;
+
         for (const o of this.objects()) {
+            if (this.fullSimulationRange) {
+                if ((o.x < minX || o.x > maxX || o.y < minY || o.y > maxY) && this.stepIndex % 3 !== 0) {
+                    continue;
+                }
+            }
+
             // noinspection JSUnresolvedFunction
             o.__gameStep();
         }
@@ -712,6 +739,13 @@ class GEO {
          * @private
          */
         this.__direction = 0;
+
+        /**
+         * The last index of steps performed on this object
+         * @type {number}
+         * @private
+         */
+        this.__lastStepIndex = this.game.stepIndex - 1;
 
         /**
          * Set of types that are allowed to collide with this object
@@ -1167,8 +1201,10 @@ class GEO {
      * @return {void}
      */
     __gameStep() {
-        this.x += this.sx;
-        this.y -= this.sy;
+        const stepsToPerform = this.game.stepIndex - this.__lastStepIndex;
+
+        this.x += stepsToPerform * this.sx;
+        this.y -= stepsToPerform * this.sy;
 
         // test if object has left the screen
         if (!this.isVisible) {
@@ -1188,6 +1224,7 @@ class GEO {
         }
 
         this.step();
+        this.__lastStepIndex = this.game.stepIndex;
     }
 
     /**
