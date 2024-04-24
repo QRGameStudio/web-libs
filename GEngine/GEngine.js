@@ -39,6 +39,12 @@ class GEG {
         this.fps = 30;
 
         /**
+         * @type {number}
+         * @private
+         */
+        this.__last_step_start = Date.now();
+
+        /**
          * If not null, slows down all object further from camera than specified value
          * @type {number|null}
          */
@@ -511,6 +517,12 @@ class GEG {
      * @return {void}
      */
     __step() {
+        let timeSinceLastStep = Date.now() - this.__last_step_start;
+        this.__last_step_start = Date.now();
+        if (this.stepIndex % 1000 === 0) {
+            console.debug(`[GEG] step ${this.stepIndex}, ${1000 / timeSinceLastStep} FPS, ${[...this.__objects.values()].reduce((a, b) => a + b.size, 0)} objects`);
+        }
+
         this.onStep();
 
         const camera = this.cameraCenter;
