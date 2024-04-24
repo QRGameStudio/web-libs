@@ -2,6 +2,7 @@
     position: fixed;
     top: 10px;
     left: 10px;
+    transition: top 2s ease 0s;
 }
 
 .popup-in {
