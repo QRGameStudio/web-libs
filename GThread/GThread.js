@@ -40,7 +40,8 @@ class GThread {
     sort(array, compareFunction = undefined) {
         return this.__execute({
             entryPoint: 'sort',
-            args: compareFunction === undefined ? [array] : [array, compareFunction.toString()],
+            args: [array],
+            code: compareFunction ? compareFunction.toString() : undefined,
             eventId: this.__messageId
         });
     }
@@ -106,32 +107,46 @@ class GThread {
 
 
 function __GThreadWorker() {
+    const CODE_CACHE = {};
+
+    /**
+     * @param code {string | undefined}
+     * @return {any}
+     */
+    function evalCode(code) {
+        if (code === undefined) {
+            return undefined;
+        }
+        if (! (code in CODE_CACHE)) {
+            CODE_CACHE[code] = eval(code);
+            setTimeout(() => delete CODE_CACHE[code], 60 * 1000);
+        }
+        return CODE_CACHE[code];
+    }
+
     /**
      * @param event {GEngineWorkerMessageEvent}
      */
     self.onmessage = (event) => {
         const entryPointName = event.data.entryPoint;
-        const code = event.data.code;
+        const codeStr = event.data.code;
         const args = event.data.args;
         const eventId = event.data.eventId;
+
+        const code = evalCode(codeStr);
 
         let result;
         let success = true;
         let arg0;
-        let arg1;
 
         try {
             switch (entryPointName) {
                 case "sort":
                     /** @type {unknown[]} */
                     arg0 = args[0];
-                    /** @type {string | undefined} */
-                    arg1 = args[1];
-                    let compareFunction = arg1 === undefined ? undefined : eval(arg1);
-                    result = compareFunction ? arg0.sort() : arg0.sort(compareFunction);
+                    result = code ? arg0.sort() : arg0.sort(code);
                     break;
                 default:
-                    eval(code);
                     const entryPoint = eval(entryPointName);
                     result = entryPoint(...args);
             }
