@@ -85,6 +85,12 @@ class GEG {
          */
         this.stepIndex = 0;
 
+        /** @type {GThread} */
+        this.threads = new GThread(4);
+
+        /**
+         * @return {void | Promise<void>}
+         */
         this.onStep = () => {
         };
         /**
@@ -305,9 +311,9 @@ class GEG {
      * @param type {string|Set<string>}
      * @param maxDistance {number | null}
      * @param count {number|null}
-     * @return {GEO[]}
+     * @return {Promise<GEO[]>}
      */
-    getNearest(point, type, maxDistance = null, count = null) {
+    async getNearest(point, type, maxDistance = null, count = null) {
         if (typeof type === "string") {
             type = new Set([type]);
         }
@@ -325,8 +331,16 @@ class GEG {
             objectsInDistance.push(object);
         }
 
-        objectsInDistance.sort((a, b) => this.distanceBetween(point, a) - this.distanceBetween(point, b));
-        return count === null ? objectsInDistance : objectsInDistance.slice(0, count);
+        /**
+         * @type {(GPoint & {i: number})[]}
+         */
+        let objectInDistancePoints = objectsInDistance.map((o, i) => ({x: o.x, y: o.y, i}));
+
+        objectInDistancePoints = await this.threads.sort(
+            objectInDistancePoints,
+            (a, b) => this.distanceBetween(point, a) - this.distanceBetween(point, b)
+        );
+        return (count === null ? objectInDistancePoints : objectInDistancePoints.slice(0, count)).map((o) => objectsInDistance[o.i]);
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -337,11 +351,11 @@ class GEG {
         const _this = this;
         this.stepIndex = 0;
 
-        function gameLoopOnce() {
+        async function gameLoopOnce() {
             const timeStart = Date.now();
 
             if (!_this.paused) {
-                _this.runOneLoop();
+                await _this.runOneLoop();
             }
 
             setTimeout(
@@ -350,14 +364,14 @@ class GEG {
             );
         }
 
-        gameLoopOnce();
+        gameLoopOnce().then();
     }
 
     /**
      * Run one step of the game
      */
-    runOneLoop() {
-        this.__step();
+    async runOneLoop() {
+        await this.__step();
         this.__draw();
         this.__checkCollisions();
         this.__removeDeadObjects();
@@ -514,16 +528,21 @@ class GEG {
     /**
      * Perform one step on the game and all objects
      * @private
-     * @return {void}
+     * @return {Promise<void>}
      */
-    __step() {
+    async __step() {
         let timeSinceLastStep = Date.now() - this.__last_step_start;
         this.__last_step_start = Date.now();
         if (this.stepIndex % 1000 === 0) {
             console.debug(`[GEG] step ${this.stepIndex}, ${1000 / timeSinceLastStep} FPS, ${[...this.__objects.values()].reduce((a, b) => a + b.size, 0)} objects`);
         }
+        /** @type {Promise<void>[]} */
+        const promises = [];
 
-        this.onStep();
+        const sr = this.onStep();
+        if (sr instanceof Promise) {
+            promises.push(sr);
+        }
 
         const camera = this.cameraCenter;
         const minX = camera.x - this.fullSimulationRange;
@@ -539,8 +558,13 @@ class GEG {
             }
 
             // noinspection JSUnresolvedFunction
-            o.__gameStep();
+            const r = o.__gameStep();
+            if (r instanceof Promise) {
+                promises.push(r);
+            }
         }
+
+        await Promise.all(promises);
     }
 
     /**
@@ -1108,10 +1132,10 @@ class GEO {
      * Gets the nearest object of given type
      * @param type {string | Set<string>}
      * @param maxDistance {number | null}
-     * @return {GEO | null}
+     * @return {Promise<GEO | null>}
      */
-    getNearest(type, maxDistance = null) {
-        const x = this.getNearests(type, maxDistance, 1)[0];
+    async getNearest(type, maxDistance = null) {
+        const x = (await this.getNearests(type, maxDistance, 1))[0];
         return x !== undefined ? x : null;
     }
 
@@ -1120,7 +1144,7 @@ class GEO {
      * @param type {string|Set<string>}
      * @param maxDistance {number | null}
      * @param count {number|null}
-     * @return {GEO[]}
+     * @return {Promise<GEO[]>}
      */
     getNearests(type, maxDistance = null, count = null) {
         return this.game.getNearest(this, type, maxDistance, count);
@@ -1128,7 +1152,7 @@ class GEO {
 
     /**
      * Perform one step event
-     * @return {void}
+     * @return {void|Promise<void>}
      */
     step() {
         // To be implemented for every object
@@ -1210,7 +1234,7 @@ class GEO {
     /**
      * Perform move by the speed and launch step event of this object
      * @private
-     * @return {void}
+     * @return {void|Promise<void>}
      */
     __gameStep() {
         const stepsToPerform = this.game.stepIndex - this.__lastStepIndex;
@@ -1235,8 +1259,9 @@ class GEO {
             this.__onscreenborderTriggered = false;
         }
 
-        this.step();
+        const r = this.step();
         this.__lastStepIndex = this.game.stepIndex;
+        return r;
     }
 
     /**

@@ -26,7 +26,6 @@ class GThread {
         this.__threadIndex = 0;
 
         for (let i = 0; i < count; i++) {
-            console.log('[HG] Creating thread', self.location.href)
             const worker = new Worker(this.__workerUrl);
             this.threads.push(worker);
             worker.onmessage = (event) => this.__onMessage(event);
@@ -41,7 +40,7 @@ class GThread {
     sort(array, compareFunction = undefined) {
         return this.__execute({
             entryPoint: 'sort',
-            args: compareFunction === undefined ? [array] : [array, compareFunction],
+            args: compareFunction === undefined ? [array] : [array, compareFunction.toString()],
             eventId: this.__messageId
         });
     }
@@ -119,58 +118,17 @@ function __GThreadWorker() {
         let result;
         let success = true;
         let arg0;
+        let arg1;
 
         try {
             switch (entryPointName) {
                 case "sort":
                     /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.sort(...args);
-                    break;
-                case "map":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.map(...args);
-                    break;
-                case "filter":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.filter(...args);
-                    break;
-                case "reduce":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.reduce(...args);
-                    break;
-                case "find":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.find(...args);
-                    break;
-                case "findIndex":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.findIndex(...args);
-                    break;
-                case "some":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.some(...args);
-                    break;
-                case "every":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.every(...args);
-                    break;
-                case "forEach":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    arg0.forEach(...args);
-                    break;
-                case "includes":
-                    /** @type {unknown[]} */
-                    arg0 = args.splice(0, 1)[0];
-                    result = arg0.includes(...args);
+                    arg0 = args[0];
+                    /** @type {string | undefined} */
+                    arg1 = args[1];
+                    let compareFunction = arg1 === undefined ? undefined : eval(arg1);
+                    result = compareFunction ? arg0.sort() : arg0.sort(compareFunction);
                     break;
                 default:
                     eval(code);

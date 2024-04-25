@@ -58,7 +58,11 @@ function GRenderer(root = document.body, variables = null, values = null, functi
                 } catch {
                     val = '';
                 }
-                el.textContent = `${val}`;
+                if (val instanceof Promise) {
+                    val.then(v => el.textContent = `${v}`);
+                } else {
+                    el.textContent = `${val}`;
+                }
             }
         );
 
@@ -73,7 +77,7 @@ function GRenderer(root = document.body, variables = null, values = null, functi
                     } catch {
                         val = '';
                     }
-                    
+
                     if (val !== undefined) {
                         el.setAttribute(attr, `${val}`);
                     } else {
@@ -185,7 +189,11 @@ function GRenderer(root = document.body, variables = null, values = null, functi
             } catch {
                 val = '';
             }
-            el.textContent = val;
+            if (val instanceof Promise) {
+                val.then(v => el.textContent = `${v}`);
+            } else {
+                el.textContent = val;
+            }
         }
         if (rAttr !== null) {
             const attrs = JSON.parse(rAttr);
