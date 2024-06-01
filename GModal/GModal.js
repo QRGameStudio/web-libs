@@ -57,7 +57,7 @@ function GModal() {
         const modalSelector = `#modal-${modalId}`;
         $(modalSelector).modal({backdrop: true, keyboard: true, focus: true, show: true});
         const modal = document.querySelector(modalSelector);
-        const renderer = new Renderer(modal, variables, null, functions);
+        const renderer = new GRenderer(modal, variables, null, functions);
         Object.assign(renderer.variables, variables, {el: modal});
         Object.assign(renderer.functions, functions, {
                 hideModal: () => {
