@@ -545,21 +545,30 @@ class GEG {
         }
 
         const camera = this.cameraCenter;
-        const minX = camera.x - this.fullSimulationRange;
-        const maxX = camera.x + this.fullSimulationRange;
-        const minY = camera.y - this.fullSimulationRange;
-        const maxY = camera.y + this.fullSimulationRange;
+        const minXSimulationRange = camera.x - this.fullSimulationRange;
+        const maxXSimulationRange = camera.x + this.fullSimulationRange;
+        const minYSimulationRange = camera.y - this.fullSimulationRange;
+        const maxYSimulationRange = camera.y + this.fullSimulationRange;
+
+        const largeSimulationRangeMultiplier = 3;
+        const minSimulationXLarge = camera.x - this.fullSimulationRange * largeSimulationRangeMultiplier;
+        const maxSimulationXLarge = camera.x + this.fullSimulationRange * largeSimulationRangeMultiplier;
+        const minSimulationYLarge = camera.y - this.fullSimulationRange * largeSimulationRangeMultiplier;
+        const maxSimulationYLarge = camera.y + this.fullSimulationRange * largeSimulationRangeMultiplier;
 
         for (const o of this.objects()) {
-            if (this.fullSimulationRange) {
-                if ((o.x < minX || o.x > maxX || o.y < minY || o.y > maxY) && this.stepIndex % 3 !== 0) {
-                    continue;
-                }
+            const outsideSimulation = this.fullSimulationRange && (o.x < minXSimulationRange || o.x > maxXSimulationRange || o.y < minYSimulationRange || o.y > maxYSimulationRange);
+            const outsideSimulationLarge = outsideSimulation && (o.x < minSimulationXLarge || o.x > maxSimulationXLarge || o.y < minSimulationYLarge || o.y > maxSimulationYLarge);
+
+            // do not run objects outside of simulation the large every step, only every 10th
+            if (outsideSimulationLarge && this.stepIndex % 10 !== 0) {
+                continue;
             }
 
             // noinspection JSUnresolvedFunction
             const r = o.__gameStep();
-            if (r instanceof Promise) {
+            if (!outsideSimulation && r instanceof Promise) {
+                // wait only for objects in simulation range
                 promises.push(r);
             }
         }
@@ -806,6 +815,13 @@ class GEO {
          * @private
          */
         this.__is_dead = false;
+
+        /**
+         * Promise that is resolved when the step is completed
+         * @type {Promise|null}
+         * @private
+         */
+        this.__promise_step_complete = null;
     }
 
     /**
@@ -1259,9 +1275,28 @@ class GEO {
             this.__onscreenborderTriggered = false;
         }
 
-        const r = this.step();
-        this.__lastStepIndex = this.game.stepIndex;
-        return r;
+        const performStep = () => {
+            const r = this.step();
+            this.__lastStepIndex = this.game.stepIndex;
+            if (r instanceof Promise) {
+                this.__promise_step_complete = r;
+                r.then(() => {
+                    if (this.__promise_step_complete === r) {
+                        this.__promise_step_complete = null;
+                    }
+                });
+            }
+            return r;
+        }
+
+        /*
+         * If the object is out of range of the simulation and the previous step is not yet completed, wait for it
+         */
+        if (this.__promise_step_complete !== null) {
+            return this.__promise_step_complete = this.__promise_step_complete.then(() => performStep());
+        }
+
+        return performStep();
     }
 
     /**
