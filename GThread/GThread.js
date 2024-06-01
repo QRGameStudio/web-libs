@@ -41,7 +41,7 @@ class GThread {
         return this.__execute({
             entryPoint: 'sort',
             args: [array],
-            code: compareFunction ? compareFunction.toString() : undefined,
+            code: compareFunction !== undefined ? compareFunction.toString() : undefined,
             eventId: this.__messageId
         });
     }
@@ -144,7 +144,7 @@ function __GThreadWorker() {
                 case "sort":
                     /** @type {unknown[]} */
                     arg0 = args[0];
-                    result = code ? arg0.sort() : arg0.sort(code);
+                    result = arg0.sort(code);
                     break;
                 default:
                     const entryPoint = eval(entryPointName);

@@ -332,14 +332,15 @@ class GEG {
         }
 
         /**
-         * @type {(GPoint & {i: number})[]}
+         * @type {(GPoint & {i: number, distance: number})[]}
          */
-        let objectInDistancePoints = objectsInDistance.map((o, i) => ({x: o.x, y: o.y, i}));
+        let objectInDistancePoints = objectsInDistance.map((o, i) => ({x: o.x, y: o.y, i, distance: this.distanceBetween(point, o)}));
 
         objectInDistancePoints = await this.threads.sort(
             objectInDistancePoints,
-            (a, b) => this.distanceBetween(point, a) - this.distanceBetween(point, b)
+            (a, b) => a.distance - b.distance
         );
+
         return (count === null ? objectInDistancePoints : objectInDistancePoints.slice(0, count)).map((o) => objectsInDistance[o.i]);
     }
 
