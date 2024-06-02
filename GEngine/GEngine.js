@@ -301,8 +301,32 @@ class GEG {
      * @param b {{x: number, y: number}} point B
      * @return {number}
      */
-    distanceBetween(a, b) {
+    static distanceBetween(a, b) {
         return Math.sqrt(((a.x - b.x) ** 2) + ((a.y - b.y) ** 2));
+    }
+
+    /**
+     * Filters objects that are in range of given point
+     * @param point {{x: number, y: number}}
+     * @param type {string|Set<string>}
+     * @param maxDistance {number|null}
+     * @return {Iterable<GEO>}
+     */
+    *getInRange(point, type, maxDistance) {
+        if (typeof type === "string") {
+            type = new Set([type]);
+        }
+
+        const minX = point.x - maxDistance;
+        const maxX = point.x + maxDistance;
+        const minY = point.y - maxDistance;
+        const maxY = point.y + maxDistance;
+
+        for (const object of this.objectsOfTypes(type)) {
+            if (maxDistance === null || (object.x >= minX && object.x <= maxX && object.y >= minY && object.y <= maxY && GEG.distanceBetween(point, object) <= maxDistance)) {
+                yield object;
+            }
+        }
     }
 
     /**
@@ -318,23 +342,13 @@ class GEG {
             type = new Set([type]);
         }
 
-        /**
-         *
-         * @type {GEO[]}
-         */
-        const objectsInDistance = [];
-        for (const object of this.objectsOfTypes(type)) {
-            if (maxDistance !== null && this.distanceBetween(point, object) > maxDistance) {
-                continue;
-            }
-
-            objectsInDistance.push(object);
-        }
+        /** @type {GEO[]} */
+        const objectsInDistance = [...(this.getInRange(point, type, maxDistance))];
 
         /**
          * @type {(GPoint & {i: number, distance: number})[]}
          */
-        let objectInDistancePoints = objectsInDistance.map((o, i) => ({x: o.x, y: o.y, i, distance: this.distanceBetween(point, o)}));
+        let objectInDistancePoints = objectsInDistance.map((o, i) => ({x: o.x, y: o.y, i, distance: GEG.distanceBetween(point, o)}));
 
         objectInDistancePoints = await this.threads.sort(
             objectInDistancePoints,
@@ -1087,7 +1101,7 @@ class GEO {
      * @return {number}
      */
     distanceTo(point) {
-        return this.game.distanceBetween({x: this.x, y: this.y}, point);
+        return GEG.distanceBetween({x: this.x, y: this.y}, point);
     }
 
     /**
