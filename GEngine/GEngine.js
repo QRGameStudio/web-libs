@@ -296,6 +296,14 @@ class GEG {
     }
 
     /**
+     * Gets current zoom level
+     * @return {number}
+     */
+    get zoom() {
+        return this.__zoom;
+    }
+
+    /**
      * Computes distance between two points
      * @param a {{x: number, y: number}} point A
      * @param b {{x: number, y: number}} point B
@@ -695,6 +703,10 @@ class GEG {
 
         const zoom = 1 / this.__zoom;
 
+        const image = this.ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const cameraOffset = this.cameraOffset;
+        this.cameraOffset = {x: 0, y: 0};
+
         if (!this.__forcedResolution) {
             canvas.height = Math.round(height * zoom);
             canvas.width = Math.round(width * zoom);
@@ -702,6 +714,10 @@ class GEG {
             canvas.height = Math.round(this.__forcedResolution.height * zoom);
             canvas.width = Math.round(this.__forcedResolution.width * zoom);
         }
+
+        this.ctx.fillStyle = 'green';
+        this.cameraOffset = cameraOffset;
+        this.ctx.putImageData(image, 0, 0);
     }
 }
 
