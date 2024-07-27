@@ -3,6 +3,10 @@ function GRenderer(root = document.body, variables = null, values = null, functi
     this.values = values === null ? {} : values;
     this.functions = functions === null ? {} : functions;
 
+    if (!'$onValueChange' in this.functions) {
+        this.functions.$onValueChange = () => {};
+    }
+
     const localContext = (el, localVariables = null) => {
         localVariables = localVariables !== null ? localVariables : {};
         const ctxS = el.getAttribute('r-local-context');
@@ -12,7 +16,7 @@ function GRenderer(root = document.body, variables = null, values = null, functi
         return Object.assign(ctx, localVariables);
     };
 
-    const assignClick = (el, localVariables = null) => {
+    const assignEvents = (el, localVariables = null) => {
         // noinspection JSUnusedLocalSymbols
         const v = this.variables;
         // noinspection JSUnusedLocalSymbols
@@ -20,10 +24,38 @@ function GRenderer(root = document.body, variables = null, values = null, functi
         // noinspection JSUnusedLocalSymbols
         const f = this.functions;
 
-        el.onclick = () => {
-            const l = localContext(el, localVariables);
-            eval(el.getAttribute('r-click'));
-            el.setAttribute('r-local-context', JSON.stringify(l));
+        if (el.getAttribute('r-click') !== null) {
+            el.onclick = () => {
+                const l = localContext(el, localVariables);
+                eval(el.getAttribute('r-click'));
+                el.setAttribute('r-local-context', JSON.stringify(l));
+            }
+        }
+
+        if (el.getAttribute('r-val') !== null) {
+            const inputName =  el.getAttribute('r-val').substring(2);
+
+            const onInput = (e) => {
+                if (el.value === w[inputName]) return;
+                w[inputName] = el.value;
+                this.functions.$onValueChange(el.value, inputName, el, e, {v, w, f});
+            }
+
+            if (el.tagName === "SELECT") {
+                setTimeout(() => {
+                    let selected;
+                    el.querySelectorAll('option').forEach(o => {
+                        o.selected = o.value === w[inputName];
+                        if (o.selected) {
+                            selected = true;
+                        }
+                    });
+                    if (selected) el.dispatchEvent(new Event('change'));
+                });
+                el.onchange = onInput;
+            } else if (el.tagName === "INPUT") {
+                el.oninput = onInput;
+            }
         }
     };
 
@@ -45,8 +77,9 @@ function GRenderer(root = document.body, variables = null, values = null, functi
             el.parentElement.removeChild(el)
         );
 
-        // assign clicks
-        element.querySelectorAll('[r-click]').forEach(el => assignClick(el, localVariables));
+        // assign events
+        element.querySelectorAll('[r-click]').forEach(el => assignEvents(el, localVariables));
+        element.querySelectorAll('[r-val]').forEach(el => assignEvents(el, localVariables));
 
         // render all variables
         element.querySelectorAll('[r-var]').forEach(el => {
@@ -181,6 +214,7 @@ function GRenderer(root = document.body, variables = null, values = null, functi
         const rVar = el.getAttribute('r-var');
         const rAttr = el.getAttribute('r-attr');
         const rClick = el.getAttribute('r-click');
+        const rVal = el.getAttribute('r-val');
 
         if (rVar !== null) {
             let val;
@@ -199,8 +233,8 @@ function GRenderer(root = document.body, variables = null, values = null, functi
             const attrs = JSON.parse(rAttr);
             Object.keys(attrs).forEach(attr => el.setAttribute(attr, eval(attrs[attr]) || ''));
         }
-        if (rClick !== null) {
-            assignClick(el, localVariables);
+        if (rClick !== null || rVal !== null) {
+            assignEvents(el, localVariables);
         }
     };
 
@@ -240,7 +274,13 @@ function GRenderer(root = document.body, variables = null, values = null, functi
     // noinspection JSUnusedGlobalSymbols
     this.setValue = (value, valueValue) => {
         this.values[value] = valueValue;
-        root.querySelectorAll(`[r-val="w.${value}"]`).forEach(el => el.value = valueValue);
+        root.querySelectorAll(`[r-val="w.${value}"]`).forEach((el) => {
+            el.value = valueValue;
+            if (el.tagName === "SELECT") {
+                el.dispatchEvent(new Event('change'));
+                el.querySelectorAll('option').forEach(o => o.selected = o.value === valueValue);
+            }
+        });
     };
 
     if (!!Object.keys(this.values).length) {
