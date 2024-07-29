@@ -4,7 +4,7 @@ import shutil
 
 DIR_ROOT = Path(__file__).parent.resolve()
 DIST_DIR = DIR_ROOT / "dist"
-SCRIPT_FILE = Path(__file__)
+SCRIPT_FILE = Path(__file__).name
 
 def generate_html_index(directory):
     relative_path = directory.relative_to(DIR_ROOT)
@@ -47,18 +47,36 @@ def save_html_index(directory, content):
     with open(index_file, 'w') as f:
         f.write(content)
 
+def copy_files(directory):
+    for item in directory.iterdir():
+        if item.name.startswith('.') or item.name == SCRIPT_FILE:
+            continue
+
+        relative_path = item.relative_to(DIR_ROOT)
+        dist_path = DIST_DIR / relative_path
+
+        if item.is_dir():
+            dist_path.mkdir(parents=True, exist_ok=True)
+            copy_files(item)
+        else:
+            shutil.copy2(item, dist_path)
+
 def generate_indexes(directory):
     index_content = generate_html_index(directory)
     save_html_index(directory, index_content)
 
     for item in directory.iterdir():
-        if item.is_dir() and not item.name.startswith('.') and item != SCRIPT_FILE and item != DIST_DIR:
+        if item.is_dir() and not item.name.startswith('.') and item.name != SCRIPT_FILE and item != DIST_DIR:
             generate_indexes(item)
 
 def main():
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
 
+    # Copy all files and directories to the dist directory
+    copy_files(DIR_ROOT)
+
+    # Generate HTML indexes
     generate_indexes(DIR_ROOT)
 
 if __name__ == "__main__":
