@@ -5,3 +5,4 @@ compile/*.css
 compile/*.txt
 compile/*.html
 .idea/
+dist/
