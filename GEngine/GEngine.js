@@ -659,12 +659,15 @@ class GEG {
                 return;
             }
 
-            for (const o2 of this.objectsOfTypes(o1.cwl)) {
+            /** @type {Set<string>} */
+            const collisionTypes = o1.cwl.size && o1.gs.size ? new Set([...o1.cwl, ...o1.gs]) : o1.cwl.size ? o1.cwl : o1.gs;
+            for (const o2 of this.objectsOfTypes(collisionTypes)) {
                 const collides = knownCollisions.get(o1)?.has(o2) || o1.isCol(o2);
 
                 if (collides) {
                     addKnownCollision(o1, o2);
-                    o1.oncollision(o2);
+                    // noinspection JSUnresolvedReference
+                    o1.__oncollision(o2);
                 }
             }
         }
@@ -795,6 +798,23 @@ class GEO {
          * @private
          */
         this.__sy = 0;
+        /**
+         * Gravity, if not null specifies the decrease of sy per second
+         * @type {null|number}
+         */
+        this.g = null;
+        /**
+         * Types of objects that stop gravitation fall
+         * @type {Set<any>}
+         */
+        this.gs = new Set();
+        /**
+         * Set of objects that this object is currently sitting on
+         * @type {Set<GEO>}
+         * @private
+         */
+        this.__collision_platforms = new Set();
+
         // noinspection JSUnusedGlobalSymbols
         /**
          * Type of this object
@@ -1136,7 +1156,7 @@ class GEO {
      * @param forcePixelPerfectCollision {boolean}
      * @return {boolean}
      */
-    isCol(other, forcePixelPerfectCollision = false) {
+    isCol(other, forcePixelPerfectCollision = true) {
         const radius = this.r;
         const radiusOther = other.r;
 
@@ -1146,7 +1166,7 @@ class GEO {
         }
 
         // quick test if object are able to have collision
-        if (!forcePixelPerfectCollision && this.distanceFrom(other) > radius + radiusOther) {
+        if (radius <= 0 || !forcePixelPerfectCollision && this.distanceFrom(other) > radius + radiusOther) {
             return false;
         }
 
@@ -1241,6 +1261,19 @@ class GEO {
     }
 
     /**
+     * Internal collision event
+     * @param other {GEO}
+     * @private
+     */
+    __oncollision(other) {
+        if (this.gs.has(other.t) && other.y > this.y) {
+            this.__collision_platforms.add(other);
+            this.sy = 0;
+        }
+        this.oncollision(other);
+    }
+
+    /**
      * Triggered when this object collides with another whitelisted object
      * @param other {GEO}
      */
@@ -1285,6 +1318,16 @@ class GEO {
      */
     __gameStep() {
         const stepsToPerform = this.game.stepIndex - this.__lastStepIndex;
+
+        if (this.__collision_platforms.size === 0 && this.g !== null && this.g !== 0) {
+            this.sy -= this.g / this.game.fps;
+        }
+
+        for (const platform of [...this.__collision_platforms]) {
+            if (!this.isCol(platform)) {
+                this.__collision_platforms.delete(platform);
+            }
+        }
 
         this.x += stepsToPerform * this.sx;
         this.y -= stepsToPerform * this.sy;
