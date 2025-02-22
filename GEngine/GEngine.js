@@ -521,10 +521,13 @@ class GEG {
 
     /**
      * Get all objects of given types
-     * @param types {Set<string>}
+     * @param types {Set<string> | string}
      * @return {Iterator<GEO>}
      */
     *objectsOfTypes(types) {
+        if (typeof types === "string") {
+            types = new Set([types]);
+        }
         for (const type of types) {
             if (!this.__objects.has(type)) {
                 continue;
