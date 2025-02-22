@@ -33,7 +33,7 @@ class GUt {
     }
 
     /**
-     * Counts an angle in which a point [dx, dy] is seen from point [0, 0]
+     * Counts an angle in degrees in which a point [dx, dy] is seen from point [0, 0]
      * @param dx {number}
      * @param dy {number}
      * @return {number}
@@ -61,6 +61,20 @@ class GUt {
         }
         const base = GUt.radToDeg(Math.atan(Math.abs(dx) / Math.abs(dy)));
         return base + 270;
+    }
+
+    /**
+     * Counts dx and dy from angle and distance
+     * @param angle {number} angle in degrees
+     * @param distance {number} distance
+     * @return {{dx: number, dy: number}}
+     */
+    static countDxDy(angle, distance) {
+        const rad = GUt.degToRad(angle);
+        return {
+            dx: Math.cos(rad) * distance,
+            dy: Math.sin(rad) * distance
+        };
     }
 
     /**
@@ -97,6 +111,22 @@ class GUt {
     static pointRelativeTo(centerX, centerY, rotationDeg, deltaX, deltaY) {
         const absoluteRotation = rotationDeg + GUt.countAngle(deltaX, deltaY);
         const distance = Math.sqrt((deltaX ** 2) + (deltaY ** 2 ));
+        const x = centerX + distance * Math.cos(GUt.degToRad(absoluteRotation));
+        const y = centerY + distance * Math.sin(GUt.degToRad(absoluteRotation));
+        return {x, y};
+    }
+
+    /**
+     * Computes point position relative to the center with given rotation
+     * @param centerX {number} x position of the center
+     * @param centerY {number} y position of the center
+     * @param rotationDeg {number} rotation of the center
+     * @param distance {number} distance from the center
+     * @param angle {number} angle of the point
+     * @return {{x: number, y: number}} absolute point coordinates
+     */
+    static pointRelativeToAngle(centerX, centerY, rotationDeg, distance, angle) {
+        const absoluteRotation = rotationDeg + angle;
         const x = centerX + distance * Math.cos(GUt.degToRad(absoluteRotation));
         const y = centerY + distance * Math.sin(GUt.degToRad(absoluteRotation));
         return {x, y};
