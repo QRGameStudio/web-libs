@@ -26,7 +26,7 @@ class GThread {
         this.__threadIndex = 0;
 
         for (let i = 0; i < count; i++) {
-            const worker = new Worker(this.__workerUrl);
+            const worker = GThread.workerFromFunction(__GThreadWorker);
             this.threads.push(worker);
             worker.onmessage = (event) => this.__onMessage(event);
         }
@@ -94,14 +94,15 @@ class GThread {
     }
 
     /**
-     * @return {string}
-     * @private
+     * Create a worker from a function
+     * @param func {function}
+     * @return {Worker}
      */
-    get __workerUrl() {
-        const blob = new Blob([`(${__GThreadWorker.toString()})()`], {type: 'application/javascript'});
+    static workerFromFunction(func) {
+        const blob = new Blob([`(${func.toString()})()`], {type: 'application/javascript'});
         const url = URL.createObjectURL(blob);
         setTimeout(() => URL.revokeObjectURL(url));
-        return url;
+        return new Worker(url);
     }
 }
 
