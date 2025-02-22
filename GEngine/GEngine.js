@@ -9,12 +9,16 @@ class GEG {
     /**
      *
      * @param canvas {HTMLCanvasElement}
+     * @param headless {boolean}
      */
-    constructor(canvas) {
+    constructor(canvas, headless = false) {
         /**
          * @type {HTMLCanvasElement}
          */
         this.canvas = canvas;
+
+        /** @type {boolean} */
+        this.headless = headless;
 
         /**
          * @type {HTMLCanvasElement}
@@ -382,7 +386,13 @@ class GEG {
             }
 
             setTimeout(
-                () => window.requestAnimationFrame(() => gameLoopOnce()),
+                () => {
+                    if (_this.headless) {
+                        gameLoopOnce().then();
+                    } else {
+                        window.requestAnimationFrame(() => gameLoopOnce());
+                    }
+                },
                 Math.max(0, Date.now() - (timeStart + _this.stepTime))
             );
         }
