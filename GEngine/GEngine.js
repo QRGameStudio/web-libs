@@ -17,8 +17,17 @@ class GEG {
          */
         this.canvas = canvas;
 
-        /** @type {boolean} */
+        /**
+         * If true, game will not render itself
+         * @type {boolean}
+         * */
         this.headless = headless;
+
+        /**
+         * If true, onScroll will be fired when scrolling is detected
+         * @type {boolean}
+         */
+        this.draggingEnabled = true;
 
         /**
          * @type {HTMLCanvasElement}
@@ -114,6 +123,10 @@ class GEG {
             console.debug(`[GEG] Clicked at ${x} ${y}`, clickedObjects)
         }
 
+        this.onDrag = (start, move) => {
+            console.debug(`[GEG] Scrolled ${start} ${move}`);
+        }
+
         /**
          * @param key {string}
          * @param keyEvent {KeyboardEvent}
@@ -150,50 +163,31 @@ class GEG {
          */
         this.__zoom = 1;
 
+        /**
+         * First mouse down position
+         * @type {GPoint|null}
+         * @private
+         */
+        this.__mouseDownPosStart = null;
+        /**
+         * Last mouse down position
+         * @type {GPoint|null}
+         * @private
+         */
+        this.__mouseDownPosLast = null;
+
         this.__rescaleCanvas();
         // hook events
         this.canvas.setAttribute('tabindex', `${Math.floor(Math.random() * 10000)}`);
         this.canvas.addEventListener('resize', () => this.__rescaleCanvas());
-        this.canvas.addEventListener('click', (event) => {
-            let {x, y} = event;
-            const realSize = this.canvas.getBoundingClientRect();
-            x *= this.w / realSize.width;
-            y *= this.h / realSize.height;
 
-            x -= this.cameraOffset.x;
-            y -= this.cameraOffset.y;
+        this.canvas.addEventListener('mousedown', (event) => this.__onMouseDown(event));
+        this.canvas.addEventListener('mousemove', (event) => this.__onMouseMove(event));
+        this.canvas.addEventListener('mouseup', (event) => this.__onMouseUp(event));
+        this.canvas.addEventListener('touchstart', (event) => this.__onMouseDown(event));
+        this.canvas.addEventListener('touchmove', (event) => this.__onMouseMove(event));
+        this.canvas.addEventListener('touchend', (event) => this.__onMouseUp(event));
 
-            /**
-             * @type {Set<GEO>}
-             */
-            const clickedObjects = new Set();
-            if (this.clickableObjects.size) {
-                const clickObject = this.createObject(x, y);
-                clickObject.w = clickObject.h = 1;
-                this.clickableObjects.forEach(o => {
-                    if (o.isVisible && o.distanceTo({x, y}) < o.r) {
-                        clickedObjects.add(o);
-                    }
-                });
-                clickObject.die();
-            }
-
-            let clickHandled = false;
-            for (const obj of clickedObjects) {
-                if (clickHandled) {
-                    break;
-                }
-                clickHandled = !!obj.onclick(x, y, clickedObjects);
-            }
-
-            if (!clickHandled) {
-                this.onClick(
-                    Math.round(x),
-                    Math.round(y),
-                    clickedObjects
-                );
-            }
-        });
         this.canvas.addEventListener('keydown', (event) => {
             const { key } = event;
             if (!(key in this.__keys_down)) {
@@ -734,6 +728,93 @@ class GEG {
         this.ctx.fillStyle = 'green';
         this.cameraOffset = cameraOffset;
         this.ctx.putImageData(image, 0, 0);
+    }
+
+    /**
+     * Handles mouse down event
+     * @param event {MouseEvent}
+     * @private
+     */
+    __onMouseDown(event) {
+        event.preventDefault();
+        this.__mouseDownPosStart = this.__mouseDownPosLast = {x: event.x, y: event.y};
+    }
+
+    /**
+     * Handles mouse move event
+     * Fires onDrag if mouse is being dragged
+     * @param event {MouseEvent}
+     * @private
+     */
+    __onMouseMove(event) {
+        event.preventDefault();
+        if (this.__mouseDownPosLast && this.draggingEnabled) {
+            this.onDrag(this.__mouseDownPosLast, {x: event.x - this.__mouseDownPosLast.x, y: event.y - this.__mouseDownPosLast.y});
+            this.__mouseDownPosLast = {x: event.x, y: event.y};
+        }
+    }
+
+    /**
+     * Handles mouse up event
+     * Fires onClick if mouse was not dragged
+     * @param event {MouseEvent}
+     * @private
+     */
+    __onMouseUp(event) {
+        event.preventDefault();
+        const mouseUpPos = {x: event.x, y: event.y};
+        if (!this.__mouseDownPosStart || !this.draggingEnabled || GEG.distanceBetween(this.__mouseDownPosStart, mouseUpPos) < 10) {
+            this.__onClick(event);
+        }
+        this.__mouseDownPosStart = null;
+        this.__mouseDownPosLast = null;
+    }
+
+    /**
+     * Handles click event
+     * Fires if not dragging and mouse is clicked
+     * @param event {MouseEvent}
+     * @private
+     */
+    __onClick(event) {
+        let {x, y} = event;
+        const realSize = this.canvas.getBoundingClientRect();
+        x *= this.w / realSize.width;
+        y *= this.h / realSize.height;
+
+        x -= this.cameraOffset.x;
+        y -= this.cameraOffset.y;
+
+        /**
+         * @type {Set<GEO>}
+         */
+        const clickedObjects = new Set();
+        if (this.clickableObjects.size) {
+            const clickObject = this.createObject(x, y);
+            clickObject.w = clickObject.h = 1;
+            this.clickableObjects.forEach(o => {
+                if (o.isVisible && o.distanceTo({x, y}) < o.r) {
+                    clickedObjects.add(o);
+                }
+            });
+            clickObject.die();
+        }
+
+        let clickHandled = false;
+        for (const obj of clickedObjects) {
+            if (clickHandled) {
+                break;
+            }
+            clickHandled = !!obj.onclick(x, y, clickedObjects);
+        }
+
+        if (!clickHandled) {
+            this.onClick(
+                Math.round(x),
+                Math.round(y),
+                clickedObjects
+            );
+        }
     }
 }
 
