@@ -123,7 +123,20 @@ class GEG {
             console.debug(`[GEG] Clicked at ${x} ${y}`, clickedObjects)
         }
 
+        /**
+         * @param start {GPoint} start of the drag
+         * @param move {GPoint} relative move
+         */
         this.onDrag = (start, move) => {
+            console.debug(`[GEG] Scrolled ${start} ${move}`);
+        }
+
+        /**
+         *
+         * @param start {GPoint}
+         * @param move {GPoint}
+         */
+        this.onScroll = (start, move) => {
             console.debug(`[GEG] Scrolled ${start} ${move}`);
         }
 
@@ -187,6 +200,8 @@ class GEG {
         this.canvas.addEventListener('touchstart', (event) => this.__onMouseDown(event));
         this.canvas.addEventListener('touchmove', (event) => this.__onMouseMove(event));
         this.canvas.addEventListener('touchend', (event) => this.__onMouseUp(event));
+
+        this.canvas.addEventListener('wheel', (event) => { this.onScroll({x: event.x, y: event.y}, {x: event.deltaX, y: event.deltaY}) });
 
         this.canvas.addEventListener('keydown', (event) => {
             const { key } = event;
@@ -732,7 +747,7 @@ class GEG {
 
     /**
      * Handles mouse down event
-     * @param event {MouseEvent}
+     * @param event {MouseEvent|TouchEvent}
      * @private
      */
     __onMouseDown(event) {
@@ -743,13 +758,13 @@ class GEG {
     /**
      * Handles mouse move event
      * Fires onDrag if mouse is being dragged
-     * @param event {MouseEvent}
+     * @param event {MouseEvent|TouchEvent}
      * @private
      */
     __onMouseMove(event) {
         event.preventDefault();
         if (this.__mouseDownPosLast && this.draggingEnabled) {
-            this.onDrag(this.__mouseDownPosLast, {x: event.x - this.__mouseDownPosLast.x, y: event.y - this.__mouseDownPosLast.y});
+            this.onDrag(this.__mouseDownPosStart, {x: event.x - this.__mouseDownPosLast.x, y: event.y - this.__mouseDownPosLast.y});
             this.__mouseDownPosLast = {x: event.x, y: event.y};
         }
     }
@@ -757,7 +772,7 @@ class GEG {
     /**
      * Handles mouse up event
      * Fires onClick if mouse was not dragged
-     * @param event {MouseEvent}
+     * @param event {MouseEvent|TouchEvent}
      * @private
      */
     __onMouseUp(event) {
@@ -773,7 +788,7 @@ class GEG {
     /**
      * Handles click event
      * Fires if not dragging and mouse is clicked
-     * @param event {MouseEvent}
+     * @param event {MouseEvent|TouchEvent}
      * @private
      */
     __onClick(event) {
