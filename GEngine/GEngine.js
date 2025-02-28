@@ -128,7 +128,7 @@ class GEG {
          * @param move {GPoint} relative move
          */
         this.onDrag = (start, move) => {
-            console.debug(`[GEG] Scrolled ${start} ${move}`);
+            console.debug(`[GEG] Dragged`, start, move);
         }
 
         /**
@@ -137,7 +137,7 @@ class GEG {
          * @param move {GPoint}
          */
         this.onScroll = (start, move) => {
-            console.debug(`[GEG] Scrolled ${start} ${move}`);
+            console.debug(`[GEG] Scrolled`, start, move);
         }
 
         /**
@@ -203,18 +203,7 @@ class GEG {
 
         this.canvas.addEventListener('wheel', (event) => { this.onScroll({x: event.x, y: event.y}, {x: event.deltaX, y: event.deltaY}) });
 
-        this.canvas.addEventListener('keydown', (event) => {
-            const { key } = event;
-            if (!(key in this.__keys_down)) {
-                this.onKeyDown(key, event);
-                this.__keys_down[key] = true;
-            }
-        });
-        this.canvas.addEventListener('keyup', (event) => {
-            const { key } = event;
-            this.onKeyUp(key, event);
-            delete this.__keys_down[key];
-        });
+        this.registerKeyboard(this.canvas);
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -247,6 +236,25 @@ class GEG {
     release(key) {
         delete this.__keys_down[key];
         this.onKeyDown(key, null);
+    }
+
+    /**
+     * Registers keyboard events on given element
+     * @param element {HTMLElement}
+     */
+    registerKeyboard(element) {
+        element.addEventListener('keydown', (event) => {
+            const { key } = event;
+            if (!(key in this.__keys_down)) {
+                this.onKeyDown(key, event);
+                this.__keys_down[key] = true;
+            }
+        });
+        element.addEventListener('keyup', (event) => {
+            const { key } = event;
+            this.onKeyUp(key, event);
+            delete this.__keys_down[key];
+        });
     }
 
     /**
