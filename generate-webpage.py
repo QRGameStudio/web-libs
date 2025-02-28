@@ -3,7 +3,8 @@ from pathlib import Path
 import shutil
 
 DIR_ROOT = Path(__file__).parent.resolve()
-DIST_DIR = DIR_ROOT / "dist"
+DIR_DIST = DIR_ROOT / "dist"
+DIR_COMPIER = DIR_ROOT / "compile"
 SCRIPT_FILE = Path(__file__).name
 
 def generate_html_index(directory):
@@ -23,7 +24,7 @@ def generate_html_index(directory):
 
     # List all files and directories
     for item in sorted(directory.iterdir()):
-        if item.name.startswith('.') or item.name == SCRIPT_FILE:
+        if item.name.startswith('.') or item.name == SCRIPT_FILE or item in (DIR_DIST, DIR_COMPIER):
             continue
 
         if item.is_dir():
@@ -39,7 +40,7 @@ def generate_html_index(directory):
 
 def save_html_index(directory, content):
     relative_path = directory.relative_to(DIR_ROOT)
-    dist_path = DIST_DIR / relative_path
+    dist_path = DIR_DIST / relative_path
 
     dist_path.mkdir(parents=True, exist_ok=True)
     index_file = dist_path / "index.html"
@@ -49,11 +50,11 @@ def save_html_index(directory, content):
 
 def copy_files(directory):
     for item in directory.iterdir():
-        if item.name.startswith('.') or item.name == SCRIPT_FILE:
+        if item.name.startswith('.') or item.name == SCRIPT_FILE or item in (DIR_DIST, DIR_COMPIER):
             continue
 
         relative_path = item.relative_to(DIR_ROOT)
-        dist_path = DIST_DIR / relative_path
+        dist_path = DIR_DIST / relative_path
 
         if item.is_dir():
             dist_path.mkdir(parents=True, exist_ok=True)
@@ -66,12 +67,12 @@ def generate_indexes(directory):
     save_html_index(directory, index_content)
 
     for item in directory.iterdir():
-        if item.is_dir() and not item.name.startswith('.') and item.name != SCRIPT_FILE and item != DIST_DIR:
+        if item.is_dir() and not item.name.startswith('.') and item.name != SCRIPT_FILE and item != DIR_DIST:
             generate_indexes(item)
 
 def main():
-    if DIST_DIR.exists():
-        shutil.rmtree(DIST_DIR)
+    if DIR_DIST.exists():
+        shutil.rmtree(DIR_DIST)
 
     # Copy all files and directories to the dist directory
     copy_files(DIR_ROOT)
